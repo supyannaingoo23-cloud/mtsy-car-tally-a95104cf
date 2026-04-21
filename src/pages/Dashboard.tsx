@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, ArrowRight, PiggyBank, TrendingUp, Wrench } from "lucide-react";
+import { AlertTriangle, ArrowRight, Baby, HandCoins, PiggyBank, TrendingUp, Wrench } from "lucide-react";
 import LiveClock from "@/components/LiveClock";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
@@ -8,25 +8,41 @@ import {
   DailyEntry,
   MaintenancePart,
   MonthlyInputs,
+  Withdrawal,
   getDailyEntries,
   getMonthly,
+  getMonthlyMap,
   getParts,
+  getWithdrawals,
 } from "@/lib/db";
-import { computeFinance, fmtMoney, ymKey } from "@/lib/finance";
+import {
+  computeAccruals,
+  computeFinance,
+  fmtMoney,
+  sumAccruals,
+  sumWithdrawals,
+  ymKey,
+} from "@/lib/finance";
 import { computeStatus } from "@/lib/maintenance";
 import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
   const [entries, setEntries] = useState<DailyEntry[]>([]);
+  const [allEntries, setAllEntries] = useState<DailyEntry[]>([]);
   const [monthly, setMonthly] = useState<MonthlyInputs | null>(null);
+  const [monthlyMap, setMonthlyMap] = useState<Record<string, MonthlyInputs>>({});
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [parts, setParts] = useState<MaintenancePart[]>([]);
 
   useEffect(() => {
     (async () => {
       const all = await getDailyEntries();
       const ym = ymKey(new Date());
+      setAllEntries(all);
       setEntries(all.filter((e) => e.date.startsWith(ym)));
       setMonthly(await getMonthly(ym));
+      setMonthlyMap(await getMonthlyMap());
+      setWithdrawals(await getWithdrawals());
       setParts(await getParts());
     })();
   }, []);
@@ -35,7 +51,15 @@ const Dashboard = () => {
     ? computeFinance(entries, monthly)
     : { netProfit: 0, generalSavings: 0, childSavings: 0, donation: 0, totalIncome: 0, dailyProfitSum: 0, manualIncome: 0, totalOutflow: 0, retained: 0 };
 
-  const totalSavings = finance.generalSavings + finance.childSavings + finance.donation;
+  // Lifetime running savings balances
+  const accruals = computeAccruals(allEntries, monthlyMap);
+  const totalIn = sumAccruals(accruals);
+  const totalOut = sumWithdrawals(withdrawals);
+  const balances = {
+    general: totalIn.general - totalOut.general,
+    child: totalIn.child - totalOut.child,
+    donation: totalIn.donation - totalOut.donation,
+  };
 
   const currentMileage = entries.length
     ? Math.max(...entries.map((e) => e.mileageStop || 0))
@@ -56,12 +80,6 @@ const Dashboard = () => {
           icon={<TrendingUp className="h-4 w-4 text-primary" />}
         />
         <StatCard
-          label="Total Savings"
-          value={fmtMoney(totalSavings)}
-          tone="success"
-          icon={<PiggyBank className="h-4 w-4 text-success" />}
-        />
-        <StatCard
           label="Daily Profit Sum"
           value={fmtMoney(finance.dailyProfitSum)}
           hint={`${entries.length} entries this month`}
@@ -71,6 +89,50 @@ const Dashboard = () => {
           value={currentMileage.toLocaleString()}
           hint="km (latest)"
         />
+        <StatCard
+          label="Manual Income (Mo)"
+          value={fmtMoney(finance.manualIncome)}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <PiggyBank className="h-4 w-4 text-success" />
+            <h2 className="font-display font-bold tracking-wider uppercase text-sm">
+              Savings Balances
+            </h2>
+          </div>
+          <Link to="/savings" className="text-xs text-primary inline-flex items-center gap-1">
+            Manage <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 gap-3">
+          <SavingsBalanceCard
+            label="General Savings"
+            percent="30%"
+            balance={balances.general}
+            accrued={totalIn.general}
+            withdrawn={totalOut.general}
+            icon={<PiggyBank className="h-4 w-4" />}
+          />
+          <SavingsBalanceCard
+            label="Child Savings"
+            percent="20%"
+            balance={balances.child}
+            accrued={totalIn.child}
+            withdrawn={totalOut.child}
+            icon={<Baby className="h-4 w-4" />}
+          />
+          <SavingsBalanceCard
+            label="Donation"
+            percent="2%"
+            balance={balances.donation}
+            accrued={totalIn.donation}
+            withdrawn={totalOut.donation}
+            icon={<HandCoins className="h-4 w-4" />}
+          />
+        </div>
       </section>
 
       <section className="surface-card border border-border rounded-xl overflow-hidden">
@@ -133,6 +195,56 @@ const Dashboard = () => {
         </Link>
       </section>
     </div>
+  );
+};
+
+const SavingsBalanceCard = ({
+  label,
+  percent,
+  balance,
+  accrued,
+  withdrawn,
+  icon,
+}: {
+  label: string;
+  percent: string;
+  balance: number;
+  accrued: number;
+  withdrawn: number;
+  icon: React.ReactNode;
+}) => {
+  const negative = balance < 0;
+  return (
+    <Link
+      to="/savings"
+      className="surface-card border border-border rounded-xl p-4 block transition-smooth hover:border-primary/60"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <span className="h-7 w-7 rounded-lg bg-primary/10 text-primary grid place-items-center">
+            {icon}
+          </span>
+          <p className="text-[10px] uppercase tracking-[0.18em] font-semibold">
+            {label}
+          </p>
+        </div>
+        <span className="text-[10px] font-display font-bold text-primary uppercase tracking-wider">
+          {percent}
+        </span>
+      </div>
+      <p
+        className={cn(
+          "font-display text-3xl font-bold tabular mt-2",
+          negative ? "text-destructive" : "text-primary",
+        )}
+      >
+        {fmtMoney(balance)}
+      </p>
+      <div className="flex items-center justify-between text-xs mt-1">
+        <span className="text-success">+ {fmtMoney(accrued)}</span>
+        <span className="text-destructive">- {fmtMoney(withdrawn)}</span>
+      </div>
+    </Link>
   );
 };
 
