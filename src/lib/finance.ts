@@ -1,4 +1,4 @@
-import { DailyEntry, MonthlyInputs, dailyProfit } from "./db";
+import { DailyEntry, MonthlyInputs, SavingsCategory, Withdrawal, dailyProfit } from "./db";
 
 export type FinanceSummary = {
   dailyProfitSum: number;
@@ -55,4 +55,87 @@ export function ymKey(d: Date) {
 }
 export function yKey(d: Date) {
   return String(d.getFullYear());
+}
+
+export const SAVINGS_RATE: Record<SavingsCategory, number> = {
+  general: 0.3,
+  child: 0.2,
+  donation: 0.02,
+};
+
+export const SAVINGS_LABEL: Record<SavingsCategory, string> = {
+  general: "General Savings",
+  child: "Child Savings",
+  donation: "Donation",
+};
+
+export type SavingsAccrual = {
+  ym: string;
+  general: number;
+  child: number;
+  donation: number;
+};
+
+/**
+ * Compute per-month savings accruals across all stored months.
+ * Each month's accrual = % of that month's positive net profit.
+ */
+export function computeAccruals(
+  entries: DailyEntry[],
+  monthlyMap: Record<string, MonthlyInputs>,
+): SavingsAccrual[] {
+  const months = new Set<string>([
+    ...Object.keys(monthlyMap),
+    ...entries.map((e) => e.date.slice(0, 7)),
+  ]);
+  return Array.from(months)
+    .sort()
+    .map((ym) => {
+      const monthEntries = entries.filter((e) => e.date.startsWith(ym));
+      const inputs =
+        monthlyMap[ym] ?? {
+          gc: 0,
+          plasticIncome: 0,
+          rentalRepresent: 0,
+          rentalPresent: 0,
+          rentalOutflow: 0,
+          plasticOutflow: 0,
+        };
+      const f = computeFinance(monthEntries, inputs);
+      return {
+        ym,
+        general: f.generalSavings,
+        child: f.childSavings,
+        donation: f.donation,
+      };
+    });
+}
+
+export function sumAccruals(
+  accruals: SavingsAccrual[],
+  filter?: (ym: string) => boolean,
+): Record<SavingsCategory, number> {
+  const list = filter ? accruals.filter((a) => filter(a.ym)) : accruals;
+  return list.reduce(
+    (acc, a) => ({
+      general: acc.general + a.general,
+      child: acc.child + a.child,
+      donation: acc.donation + a.donation,
+    }),
+    { general: 0, child: 0, donation: 0 },
+  );
+}
+
+export function sumWithdrawals(
+  withdrawals: Withdrawal[],
+  filter?: (date: string) => boolean,
+): Record<SavingsCategory, number> {
+  const list = filter ? withdrawals.filter((w) => filter(w.date)) : withdrawals;
+  return list.reduce(
+    (acc, w) => {
+      acc[w.category] += w.amount || 0;
+      return acc;
+    },
+    { general: 0, child: 0, donation: 0 } as Record<SavingsCategory, number>,
+  );
 }
