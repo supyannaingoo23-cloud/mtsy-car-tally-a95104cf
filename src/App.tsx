@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Daily from "./pages/Daily";
 import Finance from "./pages/Finance";
 import Maintenance from "./pages/Maintenance";
+import Savings from "./pages/Savings";
 import Settings from "./pages/Settings";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound.tsx";
