@@ -1,11 +1,12 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Gauge, CalendarDays, Wallet, Wrench, Settings as SettingsIcon } from "lucide-react";
+import { Gauge, CalendarDays, Wallet, PiggyBank, Wrench, Settings as SettingsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/", label: "Home", icon: Gauge, end: true },
   { to: "/daily", label: "Daily", icon: CalendarDays },
   { to: "/finance", label: "Finance", icon: Wallet },
+  { to: "/savings", label: "Savings", icon: PiggyBank },
   { to: "/maintenance", label: "Service", icon: Wrench },
   { to: "/settings", label: "More", icon: SettingsIcon },
 ];
@@ -14,6 +15,7 @@ const titles: Record<string, string> = {
   "/": "Dashboard",
   "/daily": "Daily Tracking",
   "/finance": "Finance",
+  "/savings": "Savings",
   "/maintenance": "Maintenance",
   "/settings": "Settings",
 };
@@ -46,7 +48,7 @@ const AppLayout = () => {
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto max-w-screen-sm grid grid-cols-5">
+        <div className="mx-auto max-w-screen-sm grid grid-cols-6">
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
