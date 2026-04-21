@@ -74,9 +74,10 @@ const Dashboard = () => {
 
       <section className="grid grid-cols-2 gap-3">
         <StatCard
-          label="Net Profit (Mo)"
+          label="Net Profit (This Month)"
           value={fmtMoney(finance.netProfit)}
           tone="primary"
+          hint={ymKey(new Date())}
           icon={<TrendingUp className="h-4 w-4 text-primary" />}
         />
         <StatCard
