@@ -52,6 +52,17 @@ export const PART_DEFS: { key: PartKey; label: string; kmInterval: number; month
 const K_DAILY = "mtsy:daily";
 const K_MONTHLY = "mtsy:monthly";
 const K_PARTS = "mtsy:parts";
+const K_WITHDRAWALS = "mtsy:withdrawals";
+
+export type SavingsCategory = "general" | "child" | "donation";
+
+export type Withdrawal = {
+  id: string;
+  date: string; // yyyy-mm-dd
+  category: SavingsCategory;
+  amount: number;
+  note: string;
+};
 
 // Daily
 export async function getDailyEntries(): Promise<DailyEntry[]> {
@@ -126,6 +137,26 @@ export async function savePart(part: MaintenancePart) {
 }
 export async function replaceParts(parts: MaintenancePart[]) {
   await set(K_PARTS, parts);
+}
+
+// Withdrawals
+export async function getWithdrawals(): Promise<Withdrawal[]> {
+  return (await get<Withdrawal[]>(K_WITHDRAWALS)) ?? [];
+}
+export async function saveWithdrawal(w: Withdrawal) {
+  const list = await getWithdrawals();
+  const idx = list.findIndex((x) => x.id === w.id);
+  if (idx >= 0) list[idx] = w;
+  else list.push(w);
+  list.sort((a, b) => b.date.localeCompare(a.date));
+  await set(K_WITHDRAWALS, list);
+}
+export async function deleteWithdrawal(id: string) {
+  const list = await getWithdrawals();
+  await set(K_WITHDRAWALS, list.filter((w) => w.id !== id));
+}
+export async function replaceWithdrawals(list: Withdrawal[]) {
+  await set(K_WITHDRAWALS, list);
 }
 
 // Helpers
