@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, ArrowRight, Baby, HandCoins, PiggyBank, TrendingDown, TrendingUp, Wrench } from "lucide-react";
 import LiveClock from "@/components/LiveClock";
 import StatCard from "@/components/StatCard";
+import FuelPricesCard from "@/components/FuelPricesCard";
 import { Button } from "@/components/ui/button";
 import {
   DailyEntry,
@@ -24,6 +25,7 @@ import {
   ymKey,
 } from "@/lib/finance";
 import { computeStatus } from "@/lib/maintenance";
+import { fmtNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
@@ -87,7 +89,7 @@ const Dashboard = () => {
         />
         <StatCard
           label="Current Mileage"
-          value={currentMileage.toLocaleString()}
+          value={fmtNumber(currentMileage)}
           hint="km (latest)"
         />
         <StatCard
@@ -102,6 +104,7 @@ const Dashboard = () => {
           icon={<TrendingDown className="h-4 w-4 text-destructive" />}
         />
       </section>
+      <FuelPricesCard />
 
       <section className="space-y-3">
         <div className="flex items-center justify-between px-1">

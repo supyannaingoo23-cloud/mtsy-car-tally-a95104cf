@@ -3,6 +3,8 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import NumberInput from "@/components/NumberInput";
+import { fmtNumber } from "@/lib/format";
 import { toast } from "sonner";
 import {
   DailyEntry,
@@ -54,11 +56,9 @@ const Maintenance = () => {
         <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
           Current Mileage (km)
         </Label>
-        <Input
-          type="number"
-          inputMode="numeric"
-          value={currentMileage || ""}
-          onChange={(e) => setCurrentMileage(Number(e.target.value) || 0)}
+        <NumberInput
+          value={currentMileage}
+          onChange={(n) => setCurrentMileage(n)}
           placeholder="0"
         />
         <p className="text-xs text-muted-foreground">
@@ -89,7 +89,7 @@ const Maintenance = () => {
                 <div>
                   <h3 className="font-display font-bold tracking-wide text-base">{p.label}</h3>
                   <p className="text-xs text-muted-foreground">
-                    {p.kmInterval.toLocaleString()} km
+                    {fmtNumber(p.kmInterval)} km
                     {p.monthsInterval ? ` · ${p.monthsInterval} mo` : ""}
                   </p>
                 </div>
@@ -120,7 +120,7 @@ const Maintenance = () => {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground tabular">
-                  {s.kmSinceService.toLocaleString()} / {p.kmInterval.toLocaleString()} km · {s.reason}
+                  {fmtNumber(s.kmSinceService)} / {fmtNumber(p.kmInterval)} km · {s.reason}
                 </p>
               </div>
 
@@ -129,11 +129,10 @@ const Maintenance = () => {
                   <Label className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
                     Last Service KM
                   </Label>
-                  <Input
-                    type="number"
-                    value={p.lastServiceMileage || ""}
-                    onChange={(e) =>
-                      updatePart({ ...p, lastServiceMileage: Number(e.target.value) || 0 })
+                  <NumberInput
+                    value={p.lastServiceMileage}
+                    onChange={(n) =>
+                      updatePart({ ...p, lastServiceMileage: n })
                     }
                     className="h-9"
                   />

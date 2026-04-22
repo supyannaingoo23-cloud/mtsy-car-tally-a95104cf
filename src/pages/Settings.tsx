@@ -1,14 +1,16 @@
 import { useRef } from "react";
-import { Download, Upload, Smartphone, Info } from "lucide-react";
+import { Download, Upload, Smartphone, Info, FileJson, FileSpreadsheet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { exportToExcel, importFromExcel } from "@/lib/backup";
+import { exportToJson, importFromJson } from "@/lib/jsonBackup";
 
 const Settings = () => {
   const fileRef = useRef<HTMLInputElement>(null);
+  const jsonRef = useRef<HTMLInputElement>(null);
 
-  const onImport = async (f: File | null) => {
+  const onImportExcel = async (f: File | null) => {
     if (!f) return;
     try {
       await importFromExcel(f);
@@ -19,22 +21,69 @@ const Settings = () => {
     }
   };
 
+  const onImportJson = async (f: File | null) => {
+    if (!f) return;
+    try {
+      await importFromJson(f);
+      toast.success("Restored. Reloading…");
+      setTimeout(() => window.location.reload(), 800);
+    } catch (e: any) {
+      toast.error("Restore failed", { description: e?.message ?? "Invalid JSON" });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <section className="surface-card border border-border rounded-xl p-5 space-y-3">
-        <h2 className="font-display uppercase tracking-wider text-sm font-bold text-primary">
-          Backup & Restore
+        <h2 className="font-display uppercase tracking-wider text-sm font-bold text-primary flex items-center gap-2">
+          <FileJson className="h-4 w-4" /> JSON Backup & Restore
         </h2>
         <p className="text-xs text-muted-foreground">
-          Export all data (daily entries, monthly inputs, maintenance) to an Excel file. Import to restore.
+          Manual backup of the entire database (daily, monthly, maintenance, withdrawals, fuel prices) as a JSON file.
+          Import to overwrite all records and re-sync to Cloud.
         </p>
         <div className="grid grid-cols-2 gap-2">
           <Button
             onClick={async () => {
-              await exportToExcel();
-              toast.success("Backup downloaded");
+              await exportToJson();
+              toast.success("JSON downloaded");
             }}
             className="bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow font-display uppercase tracking-wider"
+          >
+            <Download className="h-4 w-4 mr-2" /> Export JSON
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => jsonRef.current?.click()}
+            className="font-display uppercase tracking-wider"
+          >
+            <Upload className="h-4 w-4 mr-2" /> Import JSON
+          </Button>
+          <input
+            ref={jsonRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => onImportJson(e.target.files?.[0] ?? null)}
+          />
+        </div>
+      </section>
+
+      <section className="surface-card border border-border rounded-xl p-5 space-y-3">
+        <h2 className="font-display uppercase tracking-wider text-sm font-bold flex items-center gap-2">
+          <FileSpreadsheet className="h-4 w-4 text-primary" /> Excel Backup
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Export/import as a multi-sheet Excel file (legacy format).
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="secondary"
+            onClick={async () => {
+              await exportToExcel();
+              toast.success("Excel downloaded");
+            }}
+            className="font-display uppercase tracking-wider"
           >
             <Download className="h-4 w-4 mr-2" /> Export
           </Button>
@@ -50,7 +99,7 @@ const Settings = () => {
             type="file"
             accept=".xlsx,.xls"
             className="hidden"
-            onChange={(e) => onImport(e.target.files?.[0] ?? null)}
+            onChange={(e) => onImportExcel(e.target.files?.[0] ?? null)}
           />
         </div>
       </section>
@@ -60,7 +109,7 @@ const Settings = () => {
           <Smartphone className="h-4 w-4 text-primary" /> Install on Device
         </h2>
         <p className="text-xs text-muted-foreground">
-          Install MTSY to your phone home screen for app-like full-screen use, completely offline.
+          Install MTSY to your phone home screen for app-like full-screen use.
         </p>
         <Link to="/install">
           <Button variant="secondary" className="w-full font-display uppercase tracking-wider">
@@ -74,9 +123,9 @@ const Settings = () => {
           <Info className="h-4 w-4 text-primary" /> About
         </h2>
         <p className="text-xs text-muted-foreground">
-          MTSY Car Rental — operations & finance app. All data stored locally on this device.
+          MTSY Car Rental — operations & finance app. Data is mirrored between this device and Lovable Cloud.
         </p>
-        <p className="text-[10px] text-muted-foreground">v1.0 · Offline-first PWA</p>
+        <p className="text-[10px] text-muted-foreground">v1.1 · Cloud-synced PWA</p>
       </section>
     </div>
   );

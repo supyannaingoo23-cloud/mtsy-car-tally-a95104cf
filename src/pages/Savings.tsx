@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import NumberInput from "@/components/NumberInput";
 import {
   Dialog,
   DialogContent,
@@ -318,13 +319,13 @@ const WithdrawDialog = ({
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) => {
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState<number>(0);
   const [note, setNote] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
 
   useEffect(() => {
     if (category) {
-      setAmount("");
+      setAmount(0);
       setNote("");
       setDate(new Date().toISOString().slice(0, 10));
     }
@@ -332,8 +333,7 @@ const WithdrawDialog = ({
 
   const submit = async () => {
     if (!category) return;
-    const amt = Number(amount);
-    if (!amt || amt <= 0) {
+    if (!amount || amount <= 0) {
       toast.error("Enter a valid amount");
       return;
     }
@@ -341,7 +341,7 @@ const WithdrawDialog = ({
       id: `${Date.now()}`,
       date,
       category,
-      amount: amt,
+      amount: amount,
       note: note.trim() || "Withdrawal",
     });
     toast.success("Withdrawal recorded");
@@ -368,11 +368,9 @@ const WithdrawDialog = ({
             <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
               Amount
             </Label>
-            <Input
-              type="number"
-              inputMode="decimal"
+            <NumberInput
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(n) => setAmount(n)}
               placeholder="0"
             />
           </div>
