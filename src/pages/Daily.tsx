@@ -109,20 +109,16 @@ const Daily = () => {
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Mileage Start (km)">
-            <Input
-              type="number"
-              inputMode="numeric"
+            <NumberInput
               value={form.mileageStart}
-              onChange={(e) => setForm({ ...form, mileageStart: e.target.value })}
+              onChange={(n) => setForm({ ...form, mileageStart: n ? String(n) : "" })}
               placeholder="0"
             />
           </Field>
           <Field label="Mileage Stop (km)">
-            <Input
-              type="number"
-              inputMode="numeric"
+            <NumberInput
               value={form.mileageStop}
-              onChange={(e) => setForm({ ...form, mileageStop: e.target.value })}
+              onChange={(n) => setForm({ ...form, mileageStop: n ? String(n) : "" })}
               placeholder="0"
             />
           </Field>
@@ -130,37 +126,38 @@ const Daily = () => {
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Fuel Fees">
-            <Input
-              type="number"
-              inputMode="decimal"
+            <NumberInput
               value={form.fuelFees}
-              onChange={(e) => setForm({ ...form, fuelFees: e.target.value })}
+              onChange={(n) => setForm({ ...form, fuelFees: n ? String(n) : "" })}
               placeholder="0"
             />
           </Field>
           <Field label="Other Fees">
-            <Input
-              type="number"
-              inputMode="decimal"
+            <NumberInput
               value={form.otherFees}
-              onChange={(e) => setForm({ ...form, otherFees: e.target.value })}
+              onChange={(n) => setForm({ ...form, otherFees: n ? String(n) : "" })}
               placeholder="0"
             />
           </Field>
         </div>
 
         <Field label="Income">
-          <Input
-            type="number"
-            inputMode="decimal"
+          <NumberInput
             value={form.income}
-            onChange={(e) => setForm({ ...form, income: e.target.value })}
+            onChange={(n) => setForm({ ...form, income: n ? String(n) : "" })}
             placeholder="0"
           />
         </Field>
 
         <div className="grid grid-cols-3 gap-2 pt-1">
-          <Mini label="Driven" value={`${kmDriven(draft).toLocaleString()} km`} />
+          <Mini label="Driven" value={`${fmtNumber(kmDriven(draft))} km`} />
+          <Mini label="Expense" value={fmtMoney(totalExpense(draft))} />
+          <Mini
+            label="Profit"
+            value={fmtMoney(dailyProfit(draft))}
+            tone={dailyProfit(draft) >= 0 ? "success" : "danger"}
+          />
+        </div>
           <Mini label="Expense" value={fmtMoney(totalExpense(draft))} />
           <Mini
             label="Profit"
