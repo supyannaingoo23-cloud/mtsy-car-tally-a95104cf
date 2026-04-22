@@ -29,11 +29,13 @@ const Finance = () => {
   const [ym, setYm] = useState<string>(ymKey(new Date()));
   const [inputs, setInputs] = useState<MonthlyInputs | null>(null);
   const [monthlyMap, setMonthlyMap] = useState<Record<string, MonthlyInputs>>({});
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
 
   useEffect(() => {
     (async () => {
       setEntries(await getDailyEntries());
       setMonthlyMap(await getMonthlyMap());
+      setWithdrawals(await getWithdrawals());
     })();
   }, []);
 
