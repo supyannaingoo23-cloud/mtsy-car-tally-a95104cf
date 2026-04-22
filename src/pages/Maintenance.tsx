@@ -3,6 +3,8 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import NumberInput from "@/components/NumberInput";
+import { fmtNumber } from "@/lib/format";
 import { toast } from "sonner";
 import {
   DailyEntry,
