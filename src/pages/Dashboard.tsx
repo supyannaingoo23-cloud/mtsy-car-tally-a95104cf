@@ -25,6 +25,7 @@ import {
   ymKey,
 } from "@/lib/finance";
 import { computeStatus } from "@/lib/maintenance";
+import { fmtNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
