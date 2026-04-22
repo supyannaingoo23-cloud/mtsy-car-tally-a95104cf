@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, ArrowRight, Baby, HandCoins, PiggyBank, TrendingUp, Wrench } from "lucide-react";
+import { AlertTriangle, ArrowRight, Baby, HandCoins, PiggyBank, TrendingDown, TrendingUp, Wrench } from "lucide-react";
 import LiveClock from "@/components/LiveClock";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
@@ -93,6 +93,13 @@ const Dashboard = () => {
         <StatCard
           label="Manual Income (Mo)"
           value={fmtMoney(finance.manualIncome)}
+        />
+        <StatCard
+          label="Outflows (This Month)"
+          value={fmtMoney(finance.totalOutflow)}
+          tone="danger"
+          hint="Rental + Plastic outflow"
+          icon={<TrendingDown className="h-4 w-4 text-destructive" />}
         />
       </section>
 
