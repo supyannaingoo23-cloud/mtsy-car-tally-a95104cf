@@ -7,12 +7,14 @@ import { toast } from "sonner";
 import {
   DailyEntry,
   MonthlyInputs,
+  Withdrawal,
   getDailyEntries,
   getMonthly,
   getMonthlyMap,
+  getWithdrawals,
   saveMonthly,
 } from "@/lib/db";
-import { computeFinance, fmtMoney, ymKey, yKey } from "@/lib/finance";
+import { computeFinance, fmtMoney, sumWithdrawals, ymKey, yKey } from "@/lib/finance";
 import StatCard from "@/components/StatCard";
 
 const ymOptions = (entries: DailyEntry[]) => {
@@ -27,11 +29,13 @@ const Finance = () => {
   const [ym, setYm] = useState<string>(ymKey(new Date()));
   const [inputs, setInputs] = useState<MonthlyInputs | null>(null);
   const [monthlyMap, setMonthlyMap] = useState<Record<string, MonthlyInputs>>({});
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
 
   useEffect(() => {
     (async () => {
       setEntries(await getDailyEntries());
       setMonthlyMap(await getMonthlyMap());
+      setWithdrawals(await getWithdrawals());
     })();
   }, []);
 
@@ -65,6 +69,26 @@ const Finance = () => {
       { gc: 0, plasticIncome: 0, rentalRepresent: 0, rentalPresent: 0, rentalOutflow: 0, plasticOutflow: 0 },
     );
   const annual = computeFinance(yearEntries, yearInputs);
+
+  // Withdrawals deducted from savings balances
+  const monthWd = sumWithdrawals(withdrawals, (d) => d.startsWith(ym));
+  const yearWd = sumWithdrawals(withdrawals, (d) => d.startsWith(yearKey));
+
+  const monthSavings = finance
+    ? {
+        general: finance.generalSavings - monthWd.general,
+        child: finance.childSavings - monthWd.child,
+        donation: finance.donation - monthWd.donation,
+      }
+    : { general: 0, child: 0, donation: 0 };
+  const monthTotalSavings = monthSavings.general + monthSavings.child + monthSavings.donation;
+
+  const annualSavings = {
+    general: annual.generalSavings - yearWd.general,
+    child: annual.childSavings - yearWd.child,
+    donation: annual.donation - yearWd.donation,
+  };
+  const annualTotalSavings = annualSavings.general + annualSavings.child + annualSavings.donation;
 
   const updateField = (k: keyof MonthlyInputs, v: number) => {
     if (!inputs) return;
@@ -112,7 +136,8 @@ const Finance = () => {
                 <StatCard label="Net Profit" value={fmtMoney(finance.netProfit)} tone="primary" />
                 <StatCard
                   label="Total Savings"
-                  value={fmtMoney(finance.generalSavings + finance.childSavings + finance.donation)}
+                  value={fmtMoney(monthTotalSavings)}
+                  hint={monthWd.general + monthWd.child + monthWd.donation > 0 ? `− ${fmtMoney(monthWd.general + monthWd.child + monthWd.donation)} withdrawn` : undefined}
                 />
               </div>
 
@@ -138,9 +163,9 @@ const Finance = () => {
                 <h3 className="font-display uppercase tracking-wider text-sm font-bold">
                   Automated Savings
                 </h3>
-                <SavingsRow label="General Savings (30%)" value={finance.generalSavings} />
-                <SavingsRow label="Child Savings (20%)" value={finance.childSavings} />
-                <SavingsRow label="Donation (2%)" value={finance.donation} />
+                <SavingsRow label="General Savings (30%)" value={monthSavings.general} />
+                <SavingsRow label="Child Savings (20%)" value={monthSavings.child} />
+                <SavingsRow label="Donation (2%)" value={monthSavings.donation} />
                 <div className="border-t border-border/60 pt-3">
                   <SavingsRow label="Retained (48%)" value={finance.retained} bold />
                 </div>
@@ -169,11 +194,12 @@ const Finance = () => {
             <StatCard label="Net Profit" value={fmtMoney(annual.netProfit)} tone="primary" />
             <StatCard
               label="Total Savings"
-              value={fmtMoney(annual.generalSavings + annual.childSavings + annual.donation)}
+              value={fmtMoney(annualTotalSavings)}
+              hint={yearWd.general + yearWd.child + yearWd.donation > 0 ? `− ${fmtMoney(yearWd.general + yearWd.child + yearWd.donation)} withdrawn` : undefined}
             />
-            <StatCard label="General (30%)" value={fmtMoney(annual.generalSavings)} />
-            <StatCard label="Child (20%)" value={fmtMoney(annual.childSavings)} />
-            <StatCard label="Donation (2%)" value={fmtMoney(annual.donation)} />
+            <StatCard label="General (30%)" value={fmtMoney(annualSavings.general)} />
+            <StatCard label="Child (20%)" value={fmtMoney(annualSavings.child)} />
+            <StatCard label="Donation (2%)" value={fmtMoney(annualSavings.donation)} />
             <StatCard label="Retained" value={fmtMoney(annual.retained)} />
           </div>
         </TabsContent>
