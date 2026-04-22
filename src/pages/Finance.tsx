@@ -139,7 +139,8 @@ const Finance = () => {
                 <StatCard label="Net Profit" value={fmtMoney(finance.netProfit)} tone="primary" />
                 <StatCard
                   label="Total Savings"
-                  value={fmtMoney(finance.generalSavings + finance.childSavings + finance.donation)}
+                  value={fmtMoney(monthTotalSavings)}
+                  hint={monthWd.general + monthWd.child + monthWd.donation > 0 ? `− ${fmtMoney(monthWd.general + monthWd.child + monthWd.donation)} withdrawn` : undefined}
                 />
               </div>
 
