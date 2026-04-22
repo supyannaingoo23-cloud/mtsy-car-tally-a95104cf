@@ -186,7 +186,7 @@ const Daily = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold">{e.date}</p>
                     <p className="text-xs text-muted-foreground tabular">
-                      {kmDriven(e).toLocaleString()} km · Exp {fmtMoney(totalExpense(e))} · Inc{" "}
+                      {fmtNumber(kmDriven(e))} km · Exp {fmtMoney(totalExpense(e))} · Inc{" "}
                       {fmtMoney(e.income)}
                     </p>
                   </div>

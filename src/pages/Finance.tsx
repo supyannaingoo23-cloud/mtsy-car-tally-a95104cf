@@ -66,9 +66,9 @@ const Finance = () => {
     );
   const annual = computeFinance(yearEntries, yearInputs);
 
-  const updateField = (k: keyof MonthlyInputs, v: string) => {
+  const updateField = (k: keyof MonthlyInputs, v: number) => {
     if (!inputs) return;
-    setInputs({ ...inputs, [k]: Number(v) || 0 });
+    setInputs({ ...inputs, [k]: v || 0 });
   };
 
   const persist = async () => {
@@ -189,19 +189,13 @@ const NumField = ({
 }: {
   label: string;
   value: number;
-  onChange: (v: string) => void;
+  onChange: (v: number) => void;
 }) => (
   <div className="space-y-1.5">
     <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
       {label}
     </Label>
-    <Input
-      type="number"
-      inputMode="decimal"
-      value={value || ""}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder="0"
-    />
+    <NumberInput value={value} onChange={onChange} placeholder="0" />
   </div>
 );
 
