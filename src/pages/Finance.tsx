@@ -7,12 +7,14 @@ import { toast } from "sonner";
 import {
   DailyEntry,
   MonthlyInputs,
+  Withdrawal,
   getDailyEntries,
   getMonthly,
   getMonthlyMap,
+  getWithdrawals,
   saveMonthly,
 } from "@/lib/db";
-import { computeFinance, fmtMoney, ymKey, yKey } from "@/lib/finance";
+import { computeFinance, fmtMoney, sumWithdrawals, ymKey, yKey } from "@/lib/finance";
 import StatCard from "@/components/StatCard";
 
 const ymOptions = (entries: DailyEntry[]) => {
