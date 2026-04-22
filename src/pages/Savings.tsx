@@ -368,11 +368,9 @@ const WithdrawDialog = ({
             <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
               Amount
             </Label>
-            <Input
-              type="number"
-              inputMode="decimal"
+            <NumberInput
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(n) => setAmount(n)}
               placeholder="0"
             />
           </div>

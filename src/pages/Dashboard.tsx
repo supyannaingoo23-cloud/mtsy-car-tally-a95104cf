@@ -88,7 +88,7 @@ const Dashboard = () => {
         />
         <StatCard
           label="Current Mileage"
-          value={currentMileage.toLocaleString()}
+          value={fmtNumber(currentMileage)}
           hint="km (latest)"
         />
         <StatCard
