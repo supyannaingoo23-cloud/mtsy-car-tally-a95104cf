@@ -158,13 +158,7 @@ const Daily = () => {
             tone={dailyProfit(draft) >= 0 ? "success" : "danger"}
           />
         </div>
-          <Mini label="Expense" value={fmtMoney(totalExpense(draft))} />
-          <Mini
-            label="Profit"
-            value={fmtMoney(dailyProfit(draft))}
-            tone={dailyProfit(draft) >= 0 ? "success" : "danger"}
-          />
-        </div>
+
 
         <Button
           type="submit"
