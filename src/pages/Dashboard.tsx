@@ -105,7 +105,10 @@ const Dashboard = () => {
       </section>
       <FuelPricesCard />
 
-
+      <section className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <PiggyBank className="h-4 w-4 text-success" />
             <h2 className="font-display font-bold tracking-wider uppercase text-sm">
               Savings Balances
             </h2>
