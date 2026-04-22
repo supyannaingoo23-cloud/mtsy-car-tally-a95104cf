@@ -43,11 +43,11 @@ export function computeFinance(entries: DailyEntry[], inputs: MonthlyInputs): Fi
 export function fmtMoney(n: number) {
   const sign = n < 0 ? "-" : "";
   const v = Math.abs(n);
-  return `${sign}${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  return `${sign}${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 
 export function fmtKm(n: number) {
-  return `${n.toLocaleString(undefined, { maximumFractionDigits: 0 })} km`;
+  return `${n.toLocaleString("en-US", { maximumFractionDigits: 0 })} km`;
 }
 
 export function ymKey(d: Date) {
