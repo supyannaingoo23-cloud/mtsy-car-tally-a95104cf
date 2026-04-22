@@ -3,6 +3,7 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import NumberInput from "@/components/NumberInput";
 import { toast } from "sonner";
 import {
   DailyEntry,
@@ -14,6 +15,7 @@ import {
   totalExpense,
 } from "@/lib/db";
 import { fmtMoney } from "@/lib/finance";
+import { fmtNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const today = () => new Date().toISOString().slice(0, 10);
