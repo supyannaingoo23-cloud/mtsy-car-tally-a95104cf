@@ -14,7 +14,153 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_entries: {
+        Row: {
+          date: string
+          fuel_fees: number
+          id: string
+          income: number
+          mileage_start: number
+          mileage_stop: number
+          other_fees: number
+          updated_at: string
+        }
+        Insert: {
+          date: string
+          fuel_fees?: number
+          id: string
+          income?: number
+          mileage_start?: number
+          mileage_stop?: number
+          other_fees?: number
+          updated_at?: string
+        }
+        Update: {
+          date?: string
+          fuel_fees?: number
+          id?: string
+          income?: number
+          mileage_start?: number
+          mileage_stop?: number
+          other_fees?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fuel_prices: {
+        Row: {
+          id: number
+          price_92: number
+          price_95: number
+          price_diesel: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          price_92?: number
+          price_95?: number
+          price_diesel?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          price_92?: number
+          price_95?: number
+          price_diesel?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      maintenance_parts: {
+        Row: {
+          key: string
+          km_interval: number
+          label: string
+          last_service_date: string
+          last_service_mileage: number
+          months_interval: number | null
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          km_interval?: number
+          label: string
+          last_service_date: string
+          last_service_mileage?: number
+          months_interval?: number | null
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          km_interval?: number
+          label?: string
+          last_service_date?: string
+          last_service_mileage?: number
+          months_interval?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      monthly_inputs: {
+        Row: {
+          gc: number
+          plastic_income: number
+          plastic_outflow: number
+          rental_outflow: number
+          rental_present: number
+          rental_represent: number
+          updated_at: string
+          ym: string
+        }
+        Insert: {
+          gc?: number
+          plastic_income?: number
+          plastic_outflow?: number
+          rental_outflow?: number
+          rental_present?: number
+          rental_represent?: number
+          updated_at?: string
+          ym: string
+        }
+        Update: {
+          gc?: number
+          plastic_income?: number
+          plastic_outflow?: number
+          rental_outflow?: number
+          rental_present?: number
+          rental_represent?: number
+          updated_at?: string
+          ym?: string
+        }
+        Relationships: []
+      }
+      withdrawals: {
+        Row: {
+          amount: number
+          category: string
+          date: string
+          id: string
+          note: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category: string
+          date: string
+          id: string
+          note?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          date?: string
+          id?: string
+          note?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
