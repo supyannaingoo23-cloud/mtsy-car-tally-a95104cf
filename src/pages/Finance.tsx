@@ -70,6 +70,29 @@ const Finance = () => {
     );
   const annual = computeFinance(yearEntries, yearInputs);
 
+  // Withdrawals deducted from savings balances
+  const monthWd = sumWithdrawals(withdrawals, (d) => d.startsWith(ym));
+  const yearWd = sumWithdrawals(withdrawals, (d) => d.startsWith(yearKey));
+
+  const monthSavings = finance
+    ? {
+        general: finance.generalSavings - monthWd.general,
+        child: finance.childSavings - monthWd.child,
+        donation: finance.donation - monthWd.donation,
+      }
+    : { general: 0, child: 0, donation: 0 };
+  const monthTotalSavings = monthSavings.general + monthSavings.child + monthSavings.donation;
+  const monthRetained = finance
+    ? finance.retained - (monthWd.general + monthWd.child + monthWd.donation) * 0
+    : 0;
+
+  const annualSavings = {
+    general: annual.generalSavings - yearWd.general,
+    child: annual.childSavings - yearWd.child,
+    donation: annual.donation - yearWd.donation,
+  };
+  const annualTotalSavings = annualSavings.general + annualSavings.child + annualSavings.donation;
+
   const updateField = (k: keyof MonthlyInputs, v: number) => {
     if (!inputs) return;
     setInputs({ ...inputs, [k]: v || 0 });
