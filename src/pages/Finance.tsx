@@ -166,9 +166,9 @@ const Finance = () => {
                 <h3 className="font-display uppercase tracking-wider text-sm font-bold">
                   Automated Savings
                 </h3>
-                <SavingsRow label="General Savings (30%)" value={finance.generalSavings} />
-                <SavingsRow label="Child Savings (20%)" value={finance.childSavings} />
-                <SavingsRow label="Donation (2%)" value={finance.donation} />
+                <SavingsRow label="General Savings (30%)" value={monthSavings.general} />
+                <SavingsRow label="Child Savings (20%)" value={monthSavings.child} />
+                <SavingsRow label="Donation (2%)" value={monthSavings.donation} />
                 <div className="border-t border-border/60 pt-3">
                   <SavingsRow label="Retained (48%)" value={finance.retained} bold />
                 </div>
