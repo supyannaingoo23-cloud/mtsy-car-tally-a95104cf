@@ -82,9 +82,6 @@ const Finance = () => {
       }
     : { general: 0, child: 0, donation: 0 };
   const monthTotalSavings = monthSavings.general + monthSavings.child + monthSavings.donation;
-  const monthRetained = finance
-    ? finance.retained - (monthWd.general + monthWd.child + monthWd.donation) * 0
-    : 0;
 
   const annualSavings = {
     general: annual.generalSavings - yearWd.general,
