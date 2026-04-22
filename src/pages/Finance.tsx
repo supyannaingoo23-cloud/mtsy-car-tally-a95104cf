@@ -197,11 +197,12 @@ const Finance = () => {
             <StatCard label="Net Profit" value={fmtMoney(annual.netProfit)} tone="primary" />
             <StatCard
               label="Total Savings"
-              value={fmtMoney(annual.generalSavings + annual.childSavings + annual.donation)}
+              value={fmtMoney(annualTotalSavings)}
+              hint={yearWd.general + yearWd.child + yearWd.donation > 0 ? `− ${fmtMoney(yearWd.general + yearWd.child + yearWd.donation)} withdrawn` : undefined}
             />
-            <StatCard label="General (30%)" value={fmtMoney(annual.generalSavings)} />
-            <StatCard label="Child (20%)" value={fmtMoney(annual.childSavings)} />
-            <StatCard label="Donation (2%)" value={fmtMoney(annual.donation)} />
+            <StatCard label="General (30%)" value={fmtMoney(annualSavings.general)} />
+            <StatCard label="Child (20%)" value={fmtMoney(annualSavings.child)} />
+            <StatCard label="Donation (2%)" value={fmtMoney(annualSavings.donation)} />
             <StatCard label="Retained" value={fmtMoney(annual.retained)} />
           </div>
         </TabsContent>
