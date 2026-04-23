@@ -8,16 +8,36 @@ import {
   FileSpreadsheet,
   Fuel,
   LogOut,
+  KeyRound,
+  Eye,
+  EyeOff,
+  AlertTriangle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import NumberInput from "@/components/NumberInput";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { exportToExcel, importFromExcel } from "@/lib/backup";
 import { exportToJson, importFromJson } from "@/lib/jsonBackup";
-import { FuelPrices, getFuelPrices, saveFuelPrices } from "@/lib/db";
-import { logout } from "@/components/Login";
+import { factoryReset, FuelPrices, getFuelPrices, saveFuelPrices } from "@/lib/db";
+import {
+  logout,
+  setStoredPassword,
+  validatePasswordPolicy,
+  verifyPassword,
+} from "@/components/Login";
 
 const Settings = () => {
   const fileRef = useRef<HTMLInputElement>(null);
