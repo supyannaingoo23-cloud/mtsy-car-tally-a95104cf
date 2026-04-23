@@ -49,9 +49,63 @@ const Settings = () => {
   });
   const [savingFuel, setSavingFuel] = useState(false);
 
+  // Change password
+  const [curPw, setCurPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [showCur, setShowCur] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [savingPw, setSavingPw] = useState(false);
+
+  // Factory reset
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetPw, setResetPw] = useState("");
+  const [showResetPw, setShowResetPw] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
   useEffect(() => {
     (async () => setFuel(await getFuelPrices()))();
   }, []);
+
+  const changePassword = async () => {
+    if (!verifyPassword(curPw)) {
+      toast.error("Current password is incorrect");
+      return;
+    }
+    const err = validatePasswordPolicy(newPw);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    if (newPw !== confirmPw) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    setSavingPw(true);
+    setStoredPassword(newPw);
+    setSavingPw(false);
+    setCurPw("");
+    setNewPw("");
+    setConfirmPw("");
+    toast.success("Password updated");
+  };
+
+  const doFactoryReset = async () => {
+    if (!verifyPassword(resetPw)) {
+      toast.error("Current password is incorrect");
+      return;
+    }
+    setResetting(true);
+    try {
+      await factoryReset();
+      toast.success("All data wiped. Reloading…");
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (e: any) {
+      toast.error("Reset failed", { description: e?.message ?? "Unknown error" });
+      setResetting(false);
+    }
+  };
 
   const saveFuel = async () => {
     setSavingFuel(true);
