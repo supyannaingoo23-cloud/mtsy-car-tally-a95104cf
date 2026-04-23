@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AppLayout from "./components/AppLayout";
+import AuthGate from "./components/AuthGate";
 import Dashboard from "./pages/Dashboard";
 import Daily from "./pages/Daily";
 import Finance from "./pages/Finance";
@@ -21,18 +22,20 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/daily" element={<Daily />} />
-            <Route path="/finance" element={<Finance />} />
-            <Route path="/maintenance" element={<Maintenance />} />
-            <Route path="/savings" element={<Savings />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
-          <Route path="/install" element={<Install />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthGate>
+          <Routes>
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/daily" element={<Daily />} />
+              <Route path="/finance" element={<Finance />} />
+              <Route path="/maintenance" element={<Maintenance />} />
+              <Route path="/savings" element={<Savings />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
+            <Route path="/install" element={<Install />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthGate>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
