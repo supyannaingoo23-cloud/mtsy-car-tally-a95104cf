@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AppLayout from "./components/AppLayout";
 import AuthGate from "./components/AuthGate";
+import MonthlyBackupPrompt from "./components/MonthlyBackupPrompt";
 import Dashboard from "./pages/Dashboard";
 import Daily from "./pages/Daily";
 import Finance from "./pages/Finance";
@@ -23,6 +24,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthGate>
+          <MonthlyBackupPrompt />
           <Routes>
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
