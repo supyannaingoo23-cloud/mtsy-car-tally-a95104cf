@@ -93,7 +93,7 @@ const Dashboard = () => {
           hint="km (latest)"
         />
         <StatCard
-          label="Manual Income (Mo)"
+          label="General Income (Mo)"
           value={fmtMoney(finance.manualIncome)}
         />
         <StatCard

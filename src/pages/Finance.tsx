@@ -130,7 +130,7 @@ const Finance = () => {
             <>
               <div className="grid grid-cols-2 gap-3">
                 <StatCard label="Daily Profit Sum" value={fmtMoney(finance.dailyProfitSum)} hint={`${monthEntries.length} entries`} />
-                <StatCard label="Manual Income" value={fmtMoney(finance.manualIncome)} />
+                <StatCard label="General Income" value={fmtMoney(finance.manualIncome)} />
                 <StatCard label="Total Income" value={fmtMoney(finance.totalIncome)} tone="success" />
                 <StatCard label="Total Outflow" value={fmtMoney(finance.totalOutflow)} tone="danger" />
                 <StatCard label="Net Profit" value={fmtMoney(finance.netProfit)} tone="primary" />
@@ -143,7 +143,7 @@ const Finance = () => {
 
               <div className="surface-card border border-border rounded-xl p-4 space-y-3">
                 <h3 className="font-display uppercase tracking-wider text-sm font-bold text-primary">
-                  Manual Income
+                  General Income
                 </h3>
                 <NumField label="GC" value={inputs.gc} onChange={(v) => updateField("gc", v)} />
                 <NumField label="Plastic Income" value={inputs.plasticIncome} onChange={(v) => updateField("plasticIncome", v)} />
