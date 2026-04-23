@@ -31,6 +31,12 @@ import {
 import { toast } from "sonner";
 import { exportToExcel, importFromExcel } from "@/lib/backup";
 import { exportToJson, importFromJson } from "@/lib/jsonBackup";
+import {
+  downloadStoredBackup,
+  formatLastBackupLabel,
+  generateAutoBackup,
+  getAutoBackupMeta,
+} from "@/lib/autoBackup";
 import { factoryReset, FuelPrices, getFuelPrices, saveFuelPrices } from "@/lib/db";
 import {
   logout,
@@ -64,9 +70,41 @@ const Settings = () => {
   const [showResetPw, setShowResetPw] = useState(false);
   const [resetting, setResetting] = useState(false);
 
+  // Auto-backup meta
+  const [autoMeta, setAutoMeta] = useState(getAutoBackupMeta());
+  const [autoBusy, setAutoBusy] = useState(false);
+
   useEffect(() => {
     (async () => setFuel(await getFuelPrices()))();
   }, []);
+
+  const refreshAutoMeta = () => setAutoMeta(getAutoBackupMeta());
+
+  const runAutoBackupNow = async () => {
+    setAutoBusy(true);
+    try {
+      await generateAutoBackup();
+      refreshAutoMeta();
+      toast.success("Auto-backup refreshed");
+    } catch (e: any) {
+      toast.error("Backup failed", { description: e?.message ?? "Unknown error" });
+    } finally {
+      setAutoBusy(false);
+    }
+  };
+
+  const downloadAutoBackup = async () => {
+    setAutoBusy(true);
+    try {
+      await downloadStoredBackup();
+      refreshAutoMeta();
+      toast.success("Backup downloaded");
+    } catch (e: any) {
+      toast.error("Download failed", { description: e?.message ?? "Unknown error" });
+    } finally {
+      setAutoBusy(false);
+    }
+  };
 
   const changePassword = async () => {
     if (!verifyPassword(curPw)) {
