@@ -1,19 +1,57 @@
 import { FormEvent, useState } from "react";
-import { Lock, User } from "lucide-react";
+import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 const STORAGE_KEY = "mtsy:auth";
+const PASS_KEY = "mtsy:pass";
 const VALID_USER = "admin";
-const VALID_PASS = "1234";
+const DEFAULT_PASS = "1234";
+
+export function getStoredPassword(): string {
+  try {
+    return localStorage.getItem(PASS_KEY) ?? DEFAULT_PASS;
+  } catch {
+    return DEFAULT_PASS;
+  }
+}
+
+export function setStoredPassword(pw: string) {
+  try {
+    localStorage.setItem(PASS_KEY, pw);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function verifyPassword(pw: string): boolean {
+  return pw === getStoredPassword();
+}
+
+/** Validate against policy: 6-18 chars, must contain letter, number AND special. */
+export function validatePasswordPolicy(pw: string): string | null {
+  if (pw.length < 6 || pw.length > 18) return "Password must be 6–18 characters.";
+  if (!/[A-Za-z]/.test(pw)) return "Must contain at least one letter.";
+  if (!/[0-9]/.test(pw)) return "Must contain at least one number.";
+  if (!/[^A-Za-z0-9]/.test(pw)) return "Must contain at least one special character (e.g. @, #, $, !).";
+  return null;
+}
 
 export function isAuthed(): boolean {
   try {
     return localStorage.getItem(STORAGE_KEY) === "1";
   } catch {
     return false;
+  }
+}
+
+export function setAuthed() {
+  try {
+    localStorage.setItem(STORAGE_KEY, "1");
+  } catch {
+    /* ignore */
   }
 }
 
@@ -29,17 +67,14 @@ export function logout() {
 const Login = ({ onSuccess }: { onSuccess: () => void }) => {
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
+  const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    if (user.trim().toLowerCase() === VALID_USER && pass === VALID_PASS) {
-      try {
-        localStorage.setItem(STORAGE_KEY, "1");
-      } catch {
-        /* ignore */
-      }
+    if (user.trim().toLowerCase() === VALID_USER && verifyPassword(pass)) {
+      setAuthed();
       toast.success("Welcome back");
       onSuccess();
     } else {
@@ -90,13 +125,21 @@ const Login = ({ onSuccess }: { onSuccess: () => void }) => {
             <div className="relative">
               <Lock className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
-                type="password"
+                type={show ? "text" : "password"}
                 value={pass}
                 onChange={(e) => setPass(e.target.value)}
                 placeholder="••••"
                 autoComplete="current-password"
-                className="pl-9"
+                className="pl-9 pr-10"
               />
+              <button
+                type="button"
+                onClick={() => setShow((s) => !s)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                aria-label={show ? "Hide password" : "Show password"}
+              >
+                {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
           <Button
