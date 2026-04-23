@@ -308,6 +308,45 @@ export async function pullFromCloud(): Promise<void> {
   }
 }
 
+/** Wipe ALL data — local mirror and cloud — back to empty state. */
+export async function factoryReset(): Promise<void> {
+  // Reset parts to defaults (cannot be empty since UI relies on PART_DEFS)
+  const today = new Date().toISOString().slice(0, 10);
+  const defaultParts: MaintenancePart[] = PART_DEFS.map((d) => ({
+    ...d,
+    lastServiceMileage: 0,
+    lastServiceDate: today,
+  }));
+  const emptyFuel: FuelPrices = { price92: 0, price95: 0, priceDiesel: 0 };
+
+  // Local
+  await Promise.all([
+    set(K_DAILY, []),
+    set(K_MONTHLY, {}),
+    set(K_PARTS, defaultParts),
+    set(K_WITHDRAWALS, []),
+    set(K_FUEL, emptyFuel),
+  ]);
+
+  // Cloud
+  await Promise.all([
+    supabase.from("daily_entries").delete().neq("id", "__never__"),
+    supabase.from("monthly_inputs").delete().neq("ym", "__never__"),
+    supabase.from("withdrawals").delete().neq("id", "__never__"),
+  ]);
+  // Reset parts to defaults in cloud
+  await supabase.from("maintenance_parts").delete().neq("key", "__never__");
+  await supabase.from("maintenance_parts").upsert(defaultParts.map(fromPart));
+  // Reset fuel prices to zero
+  await supabase.from("fuel_prices").upsert({
+    id: 1,
+    price_92: 0,
+    price_95: 0,
+    price_diesel: 0,
+    updated_at: new Date().toISOString(),
+  });
+}
+
 /** Push entire local store up to cloud (used after JSON import). */
 export async function pushAllToCloud(): Promise<void> {
   const [daily, monthly, parts, withdrawals, fuel] = await Promise.all([
