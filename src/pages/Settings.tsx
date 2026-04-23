@@ -215,12 +215,22 @@ const Settings = () => {
       </section>
 
       <section className="surface-card border border-border rounded-xl p-5 space-y-3">
-        <h2 className="font-display uppercase tracking-wider text-sm font-bold text-primary flex items-center gap-2">
-          <FileJson className="h-4 w-4" /> JSON Backup & Restore
-        </h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display uppercase tracking-wider text-sm font-bold text-primary flex items-center gap-2">
+            <FileJson className="h-4 w-4" /> JSON Backup & Restore
+          </h2>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground text-right">
+            Last auto-backup
+            <br />
+            <span className="text-foreground normal-case tracking-normal">
+              {formatLastBackupLabel(autoMeta.lastBackupAt)}
+            </span>
+          </span>
+        </div>
         <p className="text-xs text-muted-foreground">
-          Manual backup of the entire database (daily, monthly, maintenance, withdrawals, fuel prices) as a JSON file.
-          Import to overwrite all records and re-sync to Cloud.
+          A JSON snapshot is generated automatically once per month and saved to
+          this device. Export anytime, or import a file to overwrite all records
+          and re-sync to Cloud.
         </p>
         <div className="grid grid-cols-2 gap-2">
           <Button
@@ -238,6 +248,22 @@ const Settings = () => {
             className="font-display uppercase tracking-wider"
           >
             <Upload className="h-4 w-4 mr-2" /> Import JSON
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={downloadAutoBackup}
+            disabled={autoBusy || !autoMeta.hasPayload}
+            className="font-display uppercase tracking-wider"
+          >
+            <Download className="h-4 w-4 mr-2" /> Download Last Auto-Backup
+          </Button>
+          <Button
+            variant="outline"
+            onClick={runAutoBackupNow}
+            disabled={autoBusy}
+            className="font-display uppercase tracking-wider"
+          >
+            {autoBusy ? "Working…" : "Refresh Auto-Backup"}
           </Button>
           <input
             ref={jsonRef}
