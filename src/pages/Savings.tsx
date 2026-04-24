@@ -173,14 +173,17 @@ const Savings = () => {
           {range === "month" ? "This Month" : range === "year" ? "This Year" : "All Time"}
         </h3>
         <div className="grid grid-cols-2 gap-3">
-          {cats.map((c) => (
-            <StatCard
-              key={`in-${c}`}
-              label={`${SAVINGS_LABEL[c]} +`}
-              value={fmtMoney(rangeIncome[c])}
-              tone="success"
-            />
-          ))}
+          {cats.map((c) => {
+            const net = rangeIncome[c] - rangeOut[c];
+            return (
+              <StatCard
+                key={`net-${c}`}
+                label={`${SAVINGS_LABEL[c]} (Net)`}
+                value={fmtMoney(net)}
+                tone={net < 0 ? "danger" : "success"}
+              />
+            );
+          })}
           {cats.map((c) => (
             <StatCard
               key={`out-${c}`}
