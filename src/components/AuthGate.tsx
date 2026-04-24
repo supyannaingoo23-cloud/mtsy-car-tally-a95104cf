@@ -1,14 +1,102 @@
 import { useEffect, useState } from "react";
-import Login, { isAuthed } from "./Login";
+import { Loader2 } from "lucide-react";
+import Login, { isLocalAuthed } from "./Login";
+import { supabase } from "@/integrations/supabase/client";
+import { claimOwnershipIfUnclaimed, pullFromCloud } from "@/lib/db";
 
 const AuthGate = ({ children }: { children: React.ReactNode }) => {
-  const [authed, setAuthed] = useState<boolean>(() => isAuthed());
-  // Re-check on mount in case storage was changed in another tab
+  const [status, setStatus] = useState<"checking" | "authed" | "unauthed">("checking");
+  const [syncing, setSyncing] = useState(false);
+
   useEffect(() => {
-    setAuthed(isAuthed());
+    let mounted = true;
+
+    // Set up auth listener FIRST
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      const localOk = isLocalAuthed();
+      const supaOk = !!session;
+      if (supaOk || localOk) {
+        setStatus("authed");
+        if (supaOk) {
+          // Claim ownership in the background once Google session is set
+          void claimOwnershipIfUnclaimed();
+        }
+      } else {
+        setStatus("unauthed");
+      }
+    });
+
+    // Then check current state and pull cloud data
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const supaOk = !!data.session;
+      const localOk = isLocalAuthed();
+
+      if (supaOk) {
+        await claimOwnershipIfUnclaimed();
+      }
+      if (supaOk || localOk) {
+        setSyncing(true);
+        try {
+          await pullFromCloud();
+        } finally {
+          if (mounted) setSyncing(false);
+        }
+        if (mounted) setStatus("authed");
+      } else {
+        if (mounted) setStatus("unauthed");
+      }
+    })();
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
-  if (!authed) return <Login onSuccess={() => setAuthed(true)} />;
+  if (status === "checking") {
+    return (
+      <div className="min-h-screen grid place-items-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            Loading…
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "unauthed") {
+    return (
+      <Login
+        onSuccess={async () => {
+          setSyncing(true);
+          try {
+            await pullFromCloud();
+          } finally {
+            setSyncing(false);
+          }
+          setStatus("authed");
+        }}
+      />
+    );
+  }
+
+  if (syncing) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            Syncing your data…
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return <>{children}</>;
 };
 
