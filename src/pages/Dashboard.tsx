@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowRight, Baby, HandCoins, PiggyBank, TrendingDown, Tr
 import LiveClock from "@/components/LiveClock";
 import StatCard from "@/components/StatCard";
 import FuelPricesCard from "@/components/FuelPricesCard";
+import FridayFuelReminder from "@/components/FridayFuelReminder";
 import { Button } from "@/components/ui/button";
 import {
   DailyEntry,
@@ -73,6 +74,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-4">
       <LiveClock />
+      <FridayFuelReminder />
 
       <section className="grid grid-cols-2 gap-3">
         <StatCard

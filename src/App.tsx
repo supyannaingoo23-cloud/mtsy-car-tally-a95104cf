@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import AppLayout from "./components/AppLayout";
 import AuthGate from "./components/AuthGate";
 import MonthlyBackupPrompt from "./components/MonthlyBackupPrompt";
+import FridayFuelPopup from "./components/FridayFuelPopup";
 import Dashboard from "./pages/Dashboard";
 import Daily from "./pages/Daily";
 import Finance from "./pages/Finance";
@@ -25,6 +26,7 @@ const App = () => (
       <BrowserRouter>
         <AuthGate>
           <MonthlyBackupPrompt />
+          <FridayFuelPopup />
           <Routes>
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
