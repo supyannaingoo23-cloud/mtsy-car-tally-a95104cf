@@ -37,13 +37,22 @@ import {
   generateAutoBackup,
   getAutoBackupMeta,
 } from "@/lib/autoBackup";
-import { factoryReset, FuelPrices, getFuelPrices, saveFuelPrices } from "@/lib/db";
+import {
+  factoryReset,
+  FuelHistoryEntry,
+  FuelPrices,
+  getFuelHistory,
+  getFuelPrices,
+  pullFuelHistory,
+  saveFuelPrices,
+} from "@/lib/db";
 import {
   logout,
   setStoredPassword,
   validatePasswordPolicy,
   verifyPassword,
 } from "@/components/Login";
+import { fmtNumber } from "@/lib/format";
 
 const Settings = () => {
   const fileRef = useRef<HTMLInputElement>(null);
