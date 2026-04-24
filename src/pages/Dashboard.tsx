@@ -64,9 +64,14 @@ const Dashboard = () => {
     donation: totalIn.donation - totalOut.donation,
   };
 
-  const currentMileage = entries.length
-    ? Math.max(...entries.map((e) => e.mileageStop || 0))
-    : parts.reduce((m, p) => Math.max(m, p.lastServiceMileage), 0);
+  const currentMileage = (() => {
+    const fromEntries = allEntries.reduce(
+      (m, e) => Math.max(m, e.mileageStop || 0, e.mileageStart || 0),
+      0,
+    );
+    const fromParts = parts.reduce((m, p) => Math.max(m, p.lastServiceMileage || 0), 0);
+    return Math.max(fromEntries, fromParts);
+  })();
 
   const statuses = parts.map((p) => computeStatus(p, currentMileage));
   const alerts = statuses.filter((s) => s.level !== "ok");
