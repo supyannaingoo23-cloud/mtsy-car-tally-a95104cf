@@ -167,9 +167,15 @@ const Settings = () => {
 
   const saveFuel = async () => {
     setSavingFuel(true);
-    await saveFuelPrices({ ...fuel, priceDiesel: 0 });
-    setSavingFuel(false);
-    toast.success("Fuel prices updated");
+    try {
+      await saveFuelPrices({ ...fuel, priceDiesel: 0 });
+      setFuelHistory(await getFuelHistory());
+      toast.success("Fuel prices saved to history");
+    } catch (e: any) {
+      toast.error("Save failed", { description: e?.message ?? "Unknown error" });
+    } finally {
+      setSavingFuel(false);
+    }
   };
 
   const onImportExcel = async (f: File | null) => {
