@@ -276,7 +276,11 @@ const Settings = () => {
         )}
       </section>
 
-
+      <section className="surface-card border border-border rounded-xl p-5 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display uppercase tracking-wider text-sm font-bold text-primary flex items-center gap-2">
+            <FileJson className="h-4 w-4" /> JSON Backup & Restore
+          </h2>
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground text-right">
             Last auto-backup
             <br />
