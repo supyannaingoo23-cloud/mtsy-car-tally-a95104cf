@@ -567,4 +567,38 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
   </div>
 );
 
+const HistoryCell = ({
+  label,
+  value,
+  delta,
+}: {
+  label: string;
+  value: number;
+  delta?: number;
+}) => {
+  const hasDelta = delta !== undefined && delta !== 0;
+  const up = (delta ?? 0) > 0;
+  return (
+    <div className="text-right min-w-[64px]">
+      <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
+        {label}
+      </p>
+      <p className="font-display font-bold text-primary tabular text-sm">
+        {fmtNumber(value, { decimals: value % 1 === 0 ? 0 : 2 })}
+      </p>
+      {hasDelta && (
+        <p
+          className={`text-[9px] font-semibold tabular ${
+            up ? "text-destructive" : "text-success"
+          }`}
+        >
+          {up ? "+" : ""}
+          {fmtNumber(delta!, { decimals: 0 })}
+        </p>
+      )}
+    </div>
+  );
+};
+
 export default Settings;
+
