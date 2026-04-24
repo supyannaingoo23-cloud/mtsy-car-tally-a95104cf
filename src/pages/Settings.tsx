@@ -240,11 +240,43 @@ const Settings = () => {
         </Button>
       </section>
 
-      <section className="surface-card border border-border rounded-xl p-5 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="font-display uppercase tracking-wider text-sm font-bold text-primary flex items-center gap-2">
-            <FileJson className="h-4 w-4" /> JSON Backup & Restore
+      <section className="surface-card border border-border rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-border/60">
+          <h2 className="font-display uppercase tracking-wider text-sm font-bold flex items-center gap-2">
+            <Fuel className="h-4 w-4 text-primary" /> Fuel History
           </h2>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            {fuelHistory.length} records
+          </span>
+        </div>
+        {fuelHistory.length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground">
+            No fuel-price history yet. Save weekly prices above to start tracking changes.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border/60 max-h-80 overflow-y-auto">
+            {fuelHistory.map((h, i) => {
+              const prev = fuelHistory[i + 1];
+              const d92 = prev ? h.gasoline92 - prev.gasoline92 : 0;
+              const d95 = prev ? h.gasoline95 - prev.gasoline95 : 0;
+              return (
+                <li key={h.id} className="p-3 flex items-center gap-3 text-sm">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold tabular">{h.date}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {new Date(h.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <HistoryCell label="92" value={h.gasoline92} delta={prev ? d92 : undefined} />
+                  <HistoryCell label="95" value={h.gasoline95} delta={prev ? d95 : undefined} />
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground text-right">
             Last auto-backup
             <br />
