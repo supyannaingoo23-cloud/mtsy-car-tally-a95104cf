@@ -83,8 +83,19 @@ const Settings = () => {
   const [autoMeta, setAutoMeta] = useState(getAutoBackupMeta());
   const [autoBusy, setAutoBusy] = useState(false);
 
+  // Fuel history
+  const [fuelHistory, setFuelHistory] = useState<FuelHistoryEntry[]>([]);
+
   useEffect(() => {
-    (async () => setFuel(await getFuelPrices()))();
+    (async () => {
+      setFuel(await getFuelPrices());
+      // Try cloud refresh first; fall back to local mirror
+      try {
+        setFuelHistory(await pullFuelHistory());
+      } catch {
+        setFuelHistory(await getFuelHistory());
+      }
+    })();
   }, []);
 
   const refreshAutoMeta = () => setAutoMeta(getAutoBackupMeta());
