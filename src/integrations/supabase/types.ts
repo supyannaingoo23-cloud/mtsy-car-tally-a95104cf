@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_owner: {
+        Row: {
+          claimed_at: string
+          email: string | null
+          id: number
+          owner_id: string | null
+        }
+        Insert: {
+          claimed_at?: string
+          email?: string | null
+          id?: number
+          owner_id?: string | null
+        }
+        Update: {
+          claimed_at?: string
+          email?: string | null
+          id?: number
+          owner_id?: string | null
+        }
+        Relationships: []
+      }
       daily_entries: {
         Row: {
           date: string
@@ -23,6 +44,7 @@ export type Database = {
           mileage_start: number
           mileage_stop: number
           other_fees: number
+          owner_id: string | null
           updated_at: string
         }
         Insert: {
@@ -33,6 +55,7 @@ export type Database = {
           mileage_start?: number
           mileage_stop?: number
           other_fees?: number
+          owner_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -43,13 +66,42 @@ export type Database = {
           mileage_start?: number
           mileage_stop?: number
           other_fees?: number
+          owner_id?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      fuel_history: {
+        Row: {
+          created_at: string
+          date: string
+          gasoline_92: number
+          gasoline_95: number
+          id: string
+          owner_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          gasoline_92?: number
+          gasoline_95?: number
+          id?: string
+          owner_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          gasoline_92?: number
+          gasoline_95?: number
+          id?: string
+          owner_id?: string | null
         }
         Relationships: []
       }
       fuel_prices: {
         Row: {
           id: number
+          owner_id: string | null
           price_92: number
           price_95: number
           price_diesel: number
@@ -57,6 +109,7 @@ export type Database = {
         }
         Insert: {
           id?: number
+          owner_id?: string | null
           price_92?: number
           price_95?: number
           price_diesel?: number
@@ -64,6 +117,7 @@ export type Database = {
         }
         Update: {
           id?: number
+          owner_id?: string | null
           price_92?: number
           price_95?: number
           price_diesel?: number
@@ -79,6 +133,7 @@ export type Database = {
           last_service_date: string
           last_service_mileage: number
           months_interval: number | null
+          owner_id: string | null
           updated_at: string
         }
         Insert: {
@@ -88,6 +143,7 @@ export type Database = {
           last_service_date: string
           last_service_mileage?: number
           months_interval?: number | null
+          owner_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -97,6 +153,7 @@ export type Database = {
           last_service_date?: string
           last_service_mileage?: number
           months_interval?: number | null
+          owner_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -104,6 +161,7 @@ export type Database = {
       monthly_inputs: {
         Row: {
           gc: number
+          owner_id: string | null
           plastic_income: number
           plastic_outflow: number
           rental_outflow: number
@@ -114,6 +172,7 @@ export type Database = {
         }
         Insert: {
           gc?: number
+          owner_id?: string | null
           plastic_income?: number
           plastic_outflow?: number
           rental_outflow?: number
@@ -124,6 +183,7 @@ export type Database = {
         }
         Update: {
           gc?: number
+          owner_id?: string | null
           plastic_income?: number
           plastic_outflow?: number
           rental_outflow?: number
@@ -141,6 +201,7 @@ export type Database = {
           date: string
           id: string
           note: string
+          owner_id: string | null
           updated_at: string
         }
         Insert: {
@@ -149,6 +210,7 @@ export type Database = {
           date: string
           id: string
           note?: string
+          owner_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -157,6 +219,7 @@ export type Database = {
           date?: string
           id?: string
           note?: string
+          owner_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -166,7 +229,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_owner_id: { Args: never; Returns: string }
+      is_owner_or_unclaimed: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

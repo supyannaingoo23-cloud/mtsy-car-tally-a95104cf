@@ -37,13 +37,22 @@ import {
   generateAutoBackup,
   getAutoBackupMeta,
 } from "@/lib/autoBackup";
-import { factoryReset, FuelPrices, getFuelPrices, saveFuelPrices } from "@/lib/db";
+import {
+  factoryReset,
+  FuelHistoryEntry,
+  FuelPrices,
+  getFuelHistory,
+  getFuelPrices,
+  pullFuelHistory,
+  saveFuelPrices,
+} from "@/lib/db";
 import {
   logout,
   setStoredPassword,
   validatePasswordPolicy,
   verifyPassword,
 } from "@/components/Login";
+import { fmtNumber } from "@/lib/format";
 
 const Settings = () => {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -74,8 +83,19 @@ const Settings = () => {
   const [autoMeta, setAutoMeta] = useState(getAutoBackupMeta());
   const [autoBusy, setAutoBusy] = useState(false);
 
+  // Fuel history
+  const [fuelHistory, setFuelHistory] = useState<FuelHistoryEntry[]>([]);
+
   useEffect(() => {
-    (async () => setFuel(await getFuelPrices()))();
+    (async () => {
+      setFuel(await getFuelPrices());
+      // Try cloud refresh first; fall back to local mirror
+      try {
+        setFuelHistory(await pullFuelHistory());
+      } catch {
+        setFuelHistory(await getFuelHistory());
+      }
+    })();
   }, []);
 
   const refreshAutoMeta = () => setAutoMeta(getAutoBackupMeta());
@@ -147,9 +167,15 @@ const Settings = () => {
 
   const saveFuel = async () => {
     setSavingFuel(true);
-    await saveFuelPrices({ ...fuel, priceDiesel: 0 });
-    setSavingFuel(false);
-    toast.success("Fuel prices updated");
+    try {
+      await saveFuelPrices({ ...fuel, priceDiesel: 0 });
+      setFuelHistory(await getFuelHistory());
+      toast.success("Fuel prices saved to history");
+    } catch (e: any) {
+      toast.error("Save failed", { description: e?.message ?? "Unknown error" });
+    } finally {
+      setSavingFuel(false);
+    }
   };
 
   const onImportExcel = async (f: File | null) => {
@@ -212,6 +238,42 @@ const Settings = () => {
         >
           {savingFuel ? "Saving…" : "Save Fuel Prices"}
         </Button>
+      </section>
+
+      <section className="surface-card border border-border rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-border/60">
+          <h2 className="font-display uppercase tracking-wider text-sm font-bold flex items-center gap-2">
+            <Fuel className="h-4 w-4 text-primary" /> Fuel History
+          </h2>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            {fuelHistory.length} records
+          </span>
+        </div>
+        {fuelHistory.length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground">
+            No fuel-price history yet. Save weekly prices above to start tracking changes.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border/60 max-h-80 overflow-y-auto">
+            {fuelHistory.map((h, i) => {
+              const prev = fuelHistory[i + 1];
+              const d92 = prev ? h.gasoline92 - prev.gasoline92 : 0;
+              const d95 = prev ? h.gasoline95 - prev.gasoline95 : 0;
+              return (
+                <li key={h.id} className="p-3 flex items-center gap-3 text-sm">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold tabular">{h.date}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {new Date(h.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <HistoryCell label="92" value={h.gasoline92} delta={prev ? d92 : undefined} />
+                  <HistoryCell label="95" value={h.gasoline95} delta={prev ? d95 : undefined} />
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       <section className="surface-card border border-border rounded-xl p-5 space-y-3">
@@ -505,4 +567,38 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
   </div>
 );
 
+const HistoryCell = ({
+  label,
+  value,
+  delta,
+}: {
+  label: string;
+  value: number;
+  delta?: number;
+}) => {
+  const hasDelta = delta !== undefined && delta !== 0;
+  const up = (delta ?? 0) > 0;
+  return (
+    <div className="text-right min-w-[64px]">
+      <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
+        {label}
+      </p>
+      <p className="font-display font-bold text-primary tabular text-sm">
+        {fmtNumber(value, { decimals: value % 1 === 0 ? 0 : 2 })}
+      </p>
+      {hasDelta && (
+        <p
+          className={`text-[9px] font-semibold tabular ${
+            up ? "text-destructive" : "text-success"
+          }`}
+        >
+          {up ? "+" : ""}
+          {fmtNumber(delta!, { decimals: 0 })}
+        </p>
+      )}
+    </div>
+  );
+};
+
 export default Settings;
+

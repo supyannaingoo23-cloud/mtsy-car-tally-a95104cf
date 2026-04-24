@@ -1,4 +1,4 @@
-// MTSY local DB layer (IndexedDB via idb-keyval) + Cloud mirror (Supabase)
+// MTSY local DB layer (IndexedDB via idb-keyval) + Cloud (Supabase, source of truth)
 import { get, set, update } from "idb-keyval";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -47,6 +47,14 @@ export type FuelPrices = {
   updatedAt?: string;
 };
 
+export type FuelHistoryEntry = {
+  id: string;
+  date: string; // yyyy-mm-dd
+  gasoline92: number;
+  gasoline95: number;
+  createdAt: string;
+};
+
 export const PART_DEFS: { key: PartKey; label: string; kmInterval: number; monthsInterval?: number }[] = [
   { key: "engineOil", label: "Engine Oil", kmInterval: 5000, monthsInterval: 6 },
   { key: "gearOil", label: "Gear Oil", kmInterval: 30000 },
@@ -62,6 +70,7 @@ const K_MONTHLY = "mtsy:monthly";
 const K_PARTS = "mtsy:parts";
 const K_WITHDRAWALS = "mtsy:withdrawals";
 const K_FUEL = "mtsy:fuel";
+const K_FUEL_HISTORY = "mtsy:fuelHistory";
 
 export type SavingsCategory = "general" | "child" | "donation";
 
@@ -73,7 +82,7 @@ export type Withdrawal = {
   note: string;
 };
 
-// ---------- Mappers (db row <-> app type) ----------
+// ---------- Mappers ----------
 const toDaily = (r: any): DailyEntry => ({
   id: r.id,
   date: r.date,
@@ -139,25 +148,35 @@ const fromWd = (w: Withdrawal) => ({
   amount: w.amount,
   note: w.note,
 });
+const toFuelHist = (r: any): FuelHistoryEntry => ({
+  id: r.id,
+  date: r.date,
+  gasoline92: Number(r.gasoline_92) || 0,
+  gasoline95: Number(r.gasoline_95) || 0,
+  createdAt: r.created_at,
+});
 
 // ---------- Daily ----------
 export async function getDailyEntries(): Promise<DailyEntry[]> {
   return (await get<DailyEntry[]>(K_DAILY)) ?? [];
 }
 export async function saveDailyEntry(entry: DailyEntry) {
+  // Cloud first (source of truth)
+  const { error } = await supabase.from("daily_entries").upsert(fromDaily(entry));
+  if (error) throw error;
+  // Update local mirror
   const list = await getDailyEntries();
   const idx = list.findIndex((e) => e.id === entry.id);
   if (idx >= 0) list[idx] = entry;
   else list.push(entry);
   list.sort((a, b) => a.date.localeCompare(b.date));
   await set(K_DAILY, list);
-  // Cloud
-  void supabase.from("daily_entries").upsert(fromDaily(entry));
 }
 export async function deleteDailyEntry(id: string) {
+  const { error } = await supabase.from("daily_entries").delete().eq("id", id);
+  if (error) throw error;
   const list = await getDailyEntries();
   await set(K_DAILY, list.filter((e) => e.id !== id));
-  void supabase.from("daily_entries").delete().eq("id", id);
 }
 export async function replaceDailyEntries(entries: DailyEntry[]) {
   await set(K_DAILY, entries);
@@ -183,11 +202,12 @@ export async function getMonthly(yyyymm: string): Promise<MonthlyInputs> {
   );
 }
 export async function saveMonthly(yyyymm: string, inputs: MonthlyInputs) {
+  const { error } = await supabase.from("monthly_inputs").upsert(fromMonthly(yyyymm, inputs));
+  if (error) throw error;
   await update<Record<string, MonthlyInputs>>(K_MONTHLY, (cur) => ({
     ...(cur ?? {}),
     [yyyymm]: inputs,
   }));
-  void supabase.from("monthly_inputs").upsert(fromMonthly(yyyymm, inputs));
 }
 export async function replaceMonthlyMap(map: Record<string, MonthlyInputs>) {
   await set(K_MONTHLY, map);
@@ -213,12 +233,13 @@ export async function getParts(): Promise<MaintenancePart[]> {
   return merged;
 }
 export async function savePart(part: MaintenancePart) {
+  const { error } = await supabase.from("maintenance_parts").upsert(fromPart(part));
+  if (error) throw error;
   const list = await getParts();
   const idx = list.findIndex((p) => p.key === part.key);
   if (idx >= 0) list[idx] = part;
   else list.push(part);
   await set(K_PARTS, list);
-  void supabase.from("maintenance_parts").upsert(fromPart(part));
 }
 export async function replaceParts(parts: MaintenancePart[]) {
   await set(K_PARTS, parts);
@@ -231,18 +252,20 @@ export async function getWithdrawals(): Promise<Withdrawal[]> {
   return (await get<Withdrawal[]>(K_WITHDRAWALS)) ?? [];
 }
 export async function saveWithdrawal(w: Withdrawal) {
+  const { error } = await supabase.from("withdrawals").upsert(fromWd(w));
+  if (error) throw error;
   const list = await getWithdrawals();
   const idx = list.findIndex((x) => x.id === w.id);
   if (idx >= 0) list[idx] = w;
   else list.push(w);
   list.sort((a, b) => b.date.localeCompare(a.date));
   await set(K_WITHDRAWALS, list);
-  void supabase.from("withdrawals").upsert(fromWd(w));
 }
 export async function deleteWithdrawal(id: string) {
+  const { error } = await supabase.from("withdrawals").delete().eq("id", id);
+  if (error) throw error;
   const list = await getWithdrawals();
   await set(K_WITHDRAWALS, list.filter((w) => w.id !== id));
-  void supabase.from("withdrawals").delete().eq("id", id);
 }
 export async function replaceWithdrawals(list: Withdrawal[]) {
   await set(K_WITHDRAWALS, list);
@@ -250,7 +273,7 @@ export async function replaceWithdrawals(list: Withdrawal[]) {
   if (list.length) await supabase.from("withdrawals").upsert(list.map(fromWd));
 }
 
-// ---------- Fuel Prices ----------
+// ---------- Fuel Prices (latest snapshot) ----------
 export async function getFuelPrices(): Promise<FuelPrices> {
   const local = (await get<FuelPrices>(K_FUEL)) ?? {
     price92: 0,
@@ -259,26 +282,65 @@ export async function getFuelPrices(): Promise<FuelPrices> {
   };
   return local;
 }
+
+/** Insert a NEW fuel history row AND update the singleton snapshot. Old prices are preserved. */
 export async function saveFuelPrices(p: FuelPrices) {
-  await set(K_FUEL, p);
-  void supabase.from("fuel_prices").upsert({
+  const today = new Date().toISOString().slice(0, 10);
+  // 1. Append to history (insert-only)
+  const { error: histErr } = await supabase.from("fuel_history").insert({
+    date: today,
+    gasoline_92: p.price92,
+    gasoline_95: p.price95,
+  });
+  if (histErr) throw histErr;
+  // 2. Update the "current" snapshot
+  const nowIso = new Date().toISOString();
+  const { error } = await supabase.from("fuel_prices").upsert({
     id: 1,
     price_92: p.price92,
     price_95: p.price95,
-    price_diesel: p.priceDiesel,
-    updated_at: new Date().toISOString(),
+    price_diesel: 0,
+    updated_at: nowIso,
   });
+  if (error) throw error;
+  await set(K_FUEL, { ...p, priceDiesel: 0, updatedAt: nowIso });
+  // Refresh local fuel-history mirror
+  await pullFuelHistory();
 }
 
-// ---------- Cloud Sync (pull-on-startup, Cloud is source of truth when newer) ----------
+// ---------- Fuel History ----------
+export async function getFuelHistory(): Promise<FuelHistoryEntry[]> {
+  return (await get<FuelHistoryEntry[]>(K_FUEL_HISTORY)) ?? [];
+}
+export async function pullFuelHistory(): Promise<FuelHistoryEntry[]> {
+  const { data, error } = await supabase
+    .from("fuel_history")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error || !data) return getFuelHistory();
+  const list = (data as any[]).map(toFuelHist);
+  await set(K_FUEL_HISTORY, list);
+  return list;
+}
+/** Returns [latest, previous] fuel history rows (or undefineds). */
+export async function getFuelLatestAndPrevious(): Promise<{
+  latest?: FuelHistoryEntry;
+  previous?: FuelHistoryEntry;
+}> {
+  const list = await getFuelHistory();
+  return { latest: list[0], previous: list[1] };
+}
+
+// ---------- Cloud Sync (pull-on-startup) ----------
 export async function pullFromCloud(): Promise<void> {
   try {
-    const [d, m, p, w, f] = await Promise.all([
+    const [d, m, p, w, f, fh] = await Promise.all([
       supabase.from("daily_entries").select("*").order("date"),
       supabase.from("monthly_inputs").select("*"),
       supabase.from("maintenance_parts").select("*"),
       supabase.from("withdrawals").select("*").order("date", { ascending: false }),
       supabase.from("fuel_prices").select("*").eq("id", 1).maybeSingle(),
+      supabase.from("fuel_history").select("*").order("created_at", { ascending: false }),
     ]);
 
     if (!d.error && d.data) {
@@ -303,14 +365,46 @@ export async function pullFromCloud(): Promise<void> {
         updatedAt: (f.data as any).updated_at,
       });
     }
+    if (!fh.error && fh.data) {
+      await set(K_FUEL_HISTORY, (fh.data as any[]).map(toFuelHist));
+    }
   } catch (e) {
     console.warn("[mtsy] cloud pull failed (offline?)", e);
   }
 }
 
+// ---------- App Owner (Google sign-in lock) ----------
+export type AppOwner = { ownerId: string; email: string | null; claimedAt: string } | null;
+
+export async function getAppOwner(): Promise<AppOwner> {
+  const { data, error } = await supabase
+    .from("app_owner" as any)
+    .select("*")
+    .eq("id", 1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    ownerId: (data as any).owner_id,
+    email: (data as any).email,
+    claimedAt: (data as any).claimed_at,
+  };
+}
+
+/** Claim ownership for the current authed user. Safe to call repeatedly. */
+export async function claimOwnershipIfUnclaimed(): Promise<AppOwner> {
+  const { data: sess } = await supabase.auth.getUser();
+  const u = sess.user;
+  if (!u) return null;
+  const existing = await getAppOwner();
+  if (existing) return existing;
+  await supabase
+    .from("app_owner" as any)
+    .insert({ id: 1, owner_id: u.id, email: u.email ?? null });
+  return getAppOwner();
+}
+
 /** Wipe ALL data — local mirror and cloud — back to empty state. */
 export async function factoryReset(): Promise<void> {
-  // Reset parts to defaults (cannot be empty since UI relies on PART_DEFS)
   const today = new Date().toISOString().slice(0, 10);
   const defaultParts: MaintenancePart[] = PART_DEFS.map((d) => ({
     ...d,
@@ -319,25 +413,23 @@ export async function factoryReset(): Promise<void> {
   }));
   const emptyFuel: FuelPrices = { price92: 0, price95: 0, priceDiesel: 0 };
 
-  // Local
   await Promise.all([
     set(K_DAILY, []),
     set(K_MONTHLY, {}),
     set(K_PARTS, defaultParts),
     set(K_WITHDRAWALS, []),
     set(K_FUEL, emptyFuel),
+    set(K_FUEL_HISTORY, []),
   ]);
 
-  // Cloud
   await Promise.all([
     supabase.from("daily_entries").delete().neq("id", "__never__"),
     supabase.from("monthly_inputs").delete().neq("ym", "__never__"),
     supabase.from("withdrawals").delete().neq("id", "__never__"),
+    supabase.from("fuel_history" as any).delete().neq("id", "__never__"),
   ]);
-  // Reset parts to defaults in cloud
   await supabase.from("maintenance_parts").delete().neq("key", "__never__");
   await supabase.from("maintenance_parts").upsert(defaultParts.map(fromPart));
-  // Reset fuel prices to zero
   await supabase.from("fuel_prices").upsert({
     id: 1,
     price_92: 0,

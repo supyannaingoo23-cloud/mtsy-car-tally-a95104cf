@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
+import { getAppOwner } from "@/lib/db";
 
 const STORAGE_KEY = "mtsy:auth";
 const PASS_KEY = "mtsy:pass";
@@ -30,7 +33,6 @@ export function verifyPassword(pw: string): boolean {
   return pw === getStoredPassword();
 }
 
-/** Validate against policy: 6-18 chars, must contain letter, number AND special. */
 export function validatePasswordPolicy(pw: string): string | null {
   if (pw.length < 6 || pw.length > 18) return "Password must be 6–18 characters.";
   if (!/[A-Za-z]/.test(pw)) return "Must contain at least one letter.";
@@ -39,7 +41,7 @@ export function validatePasswordPolicy(pw: string): string | null {
   return null;
 }
 
-export function isAuthed(): boolean {
+export function isLocalAuthed(): boolean {
   try {
     return localStorage.getItem(STORAGE_KEY) === "1";
   } catch {
@@ -47,7 +49,7 @@ export function isAuthed(): boolean {
   }
 }
 
-export function setAuthed() {
+export function setLocalAuthed() {
   try {
     localStorage.setItem(STORAGE_KEY, "1");
   } catch {
@@ -55,31 +57,91 @@ export function setAuthed() {
   }
 }
 
-export function logout() {
+/** @deprecated Use isLocalAuthed for the local-admin path; AuthGate handles Google. */
+export function isAuthed(): boolean {
+  return isLocalAuthed();
+}
+
+/** @deprecated Use setLocalAuthed for clarity. */
+export function setAuthed() {
+  setLocalAuthed();
+}
+
+export async function logout() {
   try {
     localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+  try {
+    await supabase.auth.signOut();
   } catch {
     /* ignore */
   }
   window.location.reload();
 }
 
+const GoogleIcon = () => (
+  <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
+    <path
+      fill="#EA4335"
+      d="M12 10.2v3.9h5.5c-.24 1.4-1.69 4.1-5.5 4.1-3.31 0-6-2.74-6-6.1s2.69-6.1 6-6.1c1.88 0 3.14.8 3.86 1.49l2.63-2.53C16.85 3.4 14.6 2.4 12 2.4 6.83 2.4 2.7 6.55 2.7 12s4.13 9.6 9.3 9.6c5.37 0 8.93-3.77 8.93-9.08 0-.61-.07-1.07-.16-1.32H12z"
+    />
+  </svg>
+);
+
 const Login = ({ onSuccess }: { onSuccess: () => void }) => {
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     if (user.trim().toLowerCase() === VALID_USER && verifyPassword(pass)) {
-      setAuthed();
+      setLocalAuthed();
       toast.success("Welcome back");
       onSuccess();
     } else {
       toast.error("Invalid credentials");
       setBusy(false);
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    setGoogleBusy(true);
+    try {
+      // If app already has an owner, prevent any other Google account from signing in.
+      const owner = await getAppOwner();
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast.error("Google sign-in failed", {
+          description: (result.error as any)?.message ?? "Try again",
+        });
+        setGoogleBusy(false);
+        return;
+      }
+      if (result.redirected) return; // browser will redirect
+
+      // Tokens received — verify ownership lock
+      const { data } = await supabase.auth.getUser();
+      if (owner && owner.ownerId !== data.user?.id) {
+        await supabase.auth.signOut();
+        toast.error("Access denied", {
+          description: "This MTSY account is locked to another Google account.",
+        });
+        setGoogleBusy(false);
+        return;
+      }
+      toast.success("Signed in with Google");
+      onSuccess();
+    } catch (e: any) {
+      toast.error("Google sign-in failed", { description: e?.message ?? "Unknown error" });
+      setGoogleBusy(false);
     }
   };
 
@@ -98,61 +160,80 @@ const Login = ({ onSuccess }: { onSuccess: () => void }) => {
           </div>
         </div>
 
-        <form
-          onSubmit={submit}
-          className="surface-card border border-border rounded-2xl p-5 space-y-4 shadow-glow"
-        >
-          <div className="space-y-1.5">
-            <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
-              Username
-            </Label>
-            <div className="relative">
-              <User className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={user}
-                onChange={(e) => setUser(e.target.value)}
-                placeholder="admin"
-                autoComplete="username"
-                autoCapitalize="none"
-                className="pl-9"
-              />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
-              Password
-            </Label>
-            <div className="relative">
-              <Lock className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type={show ? "text" : "password"}
-                value={pass}
-                onChange={(e) => setPass(e.target.value)}
-                placeholder="••••"
-                autoComplete="current-password"
-                className="pl-9 pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShow((s) => !s)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                aria-label={show ? "Hide password" : "Show password"}
-              >
-                {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
+        <div className="surface-card border border-border rounded-2xl p-5 space-y-4 shadow-glow">
           <Button
-            type="submit"
-            disabled={busy}
-            className="w-full h-12 font-display tracking-wider uppercase bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow"
+            type="button"
+            onClick={signInWithGoogle}
+            disabled={googleBusy}
+            variant="outline"
+            className="w-full h-12 font-display tracking-wider uppercase gap-2"
           >
-            {busy ? "Signing in…" : "Sign In"}
+            <GoogleIcon />
+            {googleBusy ? "Connecting…" : "Continue with Google"}
           </Button>
+
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              or admin
+            </span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <form onSubmit={submit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+                Username
+              </Label>
+              <div className="relative">
+                <User className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={user}
+                  onChange={(e) => setUser(e.target.value)}
+                  placeholder="admin"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+                Password
+              </Label>
+              <div className="relative">
+                <Lock className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type={show ? "text" : "password"}
+                  value={pass}
+                  onChange={(e) => setPass(e.target.value)}
+                  placeholder="••••"
+                  autoComplete="current-password"
+                  className="pl-9 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShow((s) => !s)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  aria-label={show ? "Hide password" : "Show password"}
+                >
+                  {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <Button
+              type="submit"
+              disabled={busy}
+              className="w-full h-12 font-display tracking-wider uppercase bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow"
+            >
+              {busy ? "Signing in…" : "Sign In"}
+            </Button>
+          </form>
+
           <p className="text-[10px] text-center text-muted-foreground">
             You'll stay signed in on this device.
           </p>
-        </form>
+        </div>
       </div>
     </div>
   );
