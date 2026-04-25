@@ -342,7 +342,9 @@ const Settings = () => {
           <FileSpreadsheet className="h-4 w-4 text-primary" /> Excel Backup
         </h2>
         <p className="text-xs text-muted-foreground">
-          Export/import as a multi-sheet Excel file (legacy format).
+          Single .xlsx file with sheets for Daily, Savings, Fuel History, Fuel
+          Prices, Monthly Finance, and Maintenance. Opens cleanly in Google
+          Sheets.
         </p>
         <div className="grid grid-cols-2 gap-2">
           <Button
