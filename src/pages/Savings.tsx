@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, PiggyBank, Trash2 } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Pencil, PiggyBank, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,6 +47,7 @@ const Savings = () => {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [range, setRange] = useState<Range>("month");
   const [dialogCat, setDialogCat] = useState<SavingsCategory | null>(null);
+  const [editing, setEditing] = useState<Withdrawal | null>(null);
 
   const refresh = async () => {
     const [e, m, w] = await Promise.all([
@@ -244,13 +245,25 @@ const Savings = () => {
                 {fmtMoney(t.amount)}
               </span>
               {t.kind === "out" && (
-                <button
-                  onClick={() => handleDelete(t.id)}
-                  className="text-muted-foreground hover:text-destructive transition-smooth"
-                  aria-label="Delete withdrawal"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      const w = withdrawals.find((x) => x.id === t.id);
+                      if (w) setEditing(w);
+                    }}
+                    className="text-muted-foreground hover:text-primary transition-smooth"
+                    aria-label="Edit withdrawal"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(t.id)}
+                    className="text-muted-foreground hover:text-destructive transition-smooth"
+                    aria-label="Delete withdrawal"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </>
               )}
             </div>
           ))}
@@ -260,6 +273,12 @@ const Savings = () => {
       <WithdrawDialog
         category={dialogCat}
         onClose={() => setDialogCat(null)}
+        onSaved={refresh}
+      />
+      <WithdrawDialog
+        category={editing?.category ?? null}
+        existing={editing}
+        onClose={() => setEditing(null)}
         onSaved={refresh}
       />
     </div>
@@ -315,10 +334,12 @@ const BalanceCard = ({
 
 const WithdrawDialog = ({
   category,
+  existing,
   onClose,
   onSaved,
 }: {
   category: SavingsCategory | null;
+  existing?: Withdrawal | null;
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) => {
@@ -328,11 +349,17 @@ const WithdrawDialog = ({
 
   useEffect(() => {
     if (category) {
-      setAmount(0);
-      setNote("");
-      setDate(new Date().toISOString().slice(0, 10));
+      if (existing) {
+        setAmount(existing.amount);
+        setNote(existing.note);
+        setDate(existing.date);
+      } else {
+        setAmount(0);
+        setNote("");
+        setDate(new Date().toISOString().slice(0, 10));
+      }
     }
-  }, [category]);
+  }, [category, existing]);
 
   const submit = async () => {
     if (!category) return;
@@ -340,14 +367,18 @@ const WithdrawDialog = ({
       toast.error("Enter a valid amount");
       return;
     }
-    await saveWithdrawal({
-      id: `${Date.now()}`,
-      date,
-      category,
-      amount: amount,
-      note: note.trim() || "Withdrawal",
-    });
-    toast.success("Withdrawal recorded");
+    try {
+      await saveWithdrawal({
+        id: existing?.id ?? `${Date.now()}`,
+        date,
+        category,
+        amount,
+        note: note.trim() || "Withdrawal",
+      });
+      toast.success(existing ? "Withdrawal updated" : "Withdrawal recorded");
+    } catch (err: any) {
+      return toast.error(err?.message || "Failed to save");
+    }
     await onSaved();
     onClose();
   };
@@ -357,7 +388,7 @@ const WithdrawDialog = ({
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="font-display uppercase tracking-wider">
-            Withdraw — {category ? SAVINGS_LABEL[category] : ""}
+            {existing ? "Edit" : "Withdraw"} — {category ? SAVINGS_LABEL[category] : ""}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">

@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,15 +42,19 @@ const empty = (date: string, mileageStart: number): FormState => ({
 const Daily = () => {
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [form, setForm] = useState<FormState>(empty(today(), 0));
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const load = async () => {
     const list = await getDailyEntries();
     setEntries(list);
-    const lastStop = list.length ? list[list.length - 1].mileageStop : 0;
-    setForm((f) => ({
-      ...f,
-      mileageStart: f.mileageStart || String(lastStop || ""),
-    }));
+    if (!editingId) {
+      const lastStop = list.length ? list[list.length - 1].mileageStop : 0;
+      setForm((f) => ({
+        ...f,
+        mileageStart: f.mileageStart || String(lastStop || ""),
+      }));
+    }
   };
 
   useEffect(() => {
@@ -60,7 +64,7 @@ const Daily = () => {
 
   const draft: DailyEntry = useMemo(
     () => ({
-      id: form.date,
+      id: editingId ?? form.date,
       date: form.date,
       mileageStart: Number(form.mileageStart) || 0,
       mileageStop: Number(form.mileageStop) || 0,
@@ -68,7 +72,7 @@ const Daily = () => {
       otherFees: Number(form.otherFees) || 0,
       income: Number(form.income) || 0,
     }),
-    [form],
+    [form, editingId],
   );
 
   const submit = async (e: FormEvent) => {
@@ -77,17 +81,42 @@ const Daily = () => {
     if (draft.mileageStop && draft.mileageStop < draft.mileageStart) {
       return toast.error("Mileage Stop must be ≥ Start");
     }
-    await saveDailyEntry(draft);
-    toast.success("Entry saved");
+    try {
+      await saveDailyEntry(draft);
+      toast.success(editingId ? "Entry updated" : "Entry saved");
+    } catch (err: any) {
+      return toast.error(err?.message || "Failed to save");
+    }
     const next = await getDailyEntries();
     setEntries(next);
+    setEditingId(null);
     const lastStop = next.length ? next[next.length - 1].mileageStop : 0;
+    setForm(empty(today(), lastStop));
+  };
+
+  const startEdit = (e: DailyEntry) => {
+    setEditingId(e.id);
+    setForm({
+      date: e.date,
+      mileageStart: String(e.mileageStart || ""),
+      mileageStop: String(e.mileageStop || ""),
+      fuelFees: String(e.fuelFees || ""),
+      otherFees: String(e.otherFees || ""),
+      income: String(e.income || ""),
+    });
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    const lastStop = entries.length ? entries[entries.length - 1].mileageStop : 0;
     setForm(empty(today(), lastStop));
   };
 
   const remove = async (id: string) => {
     await deleteDailyEntry(id);
     toast.success("Entry deleted");
+    if (editingId === id) cancelEdit();
     load();
   };
 
@@ -97,9 +126,9 @@ const Daily = () => {
     <div className="space-y-5">
       <FuelPricesCard compact title="Fuel Prices (Today)" />
 
-      <form onSubmit={submit} className="surface-card border border-border rounded-xl p-4 space-y-4">
+      <form ref={formRef} onSubmit={submit} className="surface-card border border-border rounded-xl p-4 space-y-4">
         <h2 className="font-display font-bold uppercase tracking-wider text-sm text-primary">
-          New Daily Entry
+          {editingId ? `Edit Entry — ${form.date}` : "New Daily Entry"}
         </h2>
 
         <Field label="Date">
@@ -163,12 +192,24 @@ const Daily = () => {
         </div>
 
 
-        <Button
-          type="submit"
-          className="w-full h-12 font-display tracking-wider uppercase bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow"
-        >
-          Save Entry
-        </Button>
+        <div className="flex gap-2">
+          {editingId && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={cancelEdit}
+              className="h-12 font-display tracking-wider uppercase"
+            >
+              Cancel
+            </Button>
+          )}
+          <Button
+            type="submit"
+            className="flex-1 h-12 font-display tracking-wider uppercase bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow"
+          >
+            {editingId ? "Update Entry" : "Save Entry"}
+          </Button>
+        </div>
       </form>
 
       <section className="surface-card border border-border rounded-xl overflow-hidden">
@@ -201,6 +242,14 @@ const Daily = () => {
                   >
                     {fmtMoney(profit)}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => startEdit(e)}
+                    className="p-2 text-muted-foreground hover:text-primary transition-smooth"
+                    aria-label="Edit entry"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
                   <button
                     type="button"
                     onClick={() => remove(e.id)}
