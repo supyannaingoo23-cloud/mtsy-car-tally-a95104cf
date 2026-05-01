@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, PiggyBank, Trash2 } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Pencil, PiggyBank, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
