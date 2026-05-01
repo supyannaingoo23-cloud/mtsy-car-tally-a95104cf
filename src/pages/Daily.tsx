@@ -244,6 +244,14 @@ const Daily = () => {
                   </span>
                   <button
                     type="button"
+                    onClick={() => startEdit(e)}
+                    className="p-2 text-muted-foreground hover:text-primary transition-smooth"
+                    aria-label="Edit entry"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => remove(e.id)}
                     className="p-2 text-muted-foreground hover:text-destructive transition-smooth"
                     aria-label="Delete entry"
