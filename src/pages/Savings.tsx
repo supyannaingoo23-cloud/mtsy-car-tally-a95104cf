@@ -47,6 +47,7 @@ const Savings = () => {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [range, setRange] = useState<Range>("month");
   const [dialogCat, setDialogCat] = useState<SavingsCategory | null>(null);
+  const [editing, setEditing] = useState<Withdrawal | null>(null);
 
   const refresh = async () => {
     const [e, m, w] = await Promise.all([
