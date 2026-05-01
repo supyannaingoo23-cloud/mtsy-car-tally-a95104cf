@@ -245,13 +245,25 @@ const Savings = () => {
                 {fmtMoney(t.amount)}
               </span>
               {t.kind === "out" && (
-                <button
-                  onClick={() => handleDelete(t.id)}
-                  className="text-muted-foreground hover:text-destructive transition-smooth"
-                  aria-label="Delete withdrawal"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      const w = withdrawals.find((x) => x.id === t.id);
+                      if (w) setEditing(w);
+                    }}
+                    className="text-muted-foreground hover:text-primary transition-smooth"
+                    aria-label="Edit withdrawal"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(t.id)}
+                    className="text-muted-foreground hover:text-destructive transition-smooth"
+                    aria-label="Delete withdrawal"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </>
               )}
             </div>
           ))}
