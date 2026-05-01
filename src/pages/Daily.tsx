@@ -42,15 +42,19 @@ const empty = (date: string, mileageStart: number): FormState => ({
 const Daily = () => {
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [form, setForm] = useState<FormState>(empty(today(), 0));
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const load = async () => {
     const list = await getDailyEntries();
     setEntries(list);
-    const lastStop = list.length ? list[list.length - 1].mileageStop : 0;
-    setForm((f) => ({
-      ...f,
-      mileageStart: f.mileageStart || String(lastStop || ""),
-    }));
+    if (!editingId) {
+      const lastStop = list.length ? list[list.length - 1].mileageStop : 0;
+      setForm((f) => ({
+        ...f,
+        mileageStart: f.mileageStart || String(lastStop || ""),
+      }));
+    }
   };
 
   useEffect(() => {
