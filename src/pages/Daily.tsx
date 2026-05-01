@@ -64,7 +64,7 @@ const Daily = () => {
 
   const draft: DailyEntry = useMemo(
     () => ({
-      id: form.date,
+      id: editingId ?? form.date,
       date: form.date,
       mileageStart: Number(form.mileageStart) || 0,
       mileageStop: Number(form.mileageStop) || 0,
@@ -72,7 +72,7 @@ const Daily = () => {
       otherFees: Number(form.otherFees) || 0,
       income: Number(form.income) || 0,
     }),
-    [form],
+    [form, editingId],
   );
 
   const submit = async (e: FormEvent) => {
@@ -81,17 +81,42 @@ const Daily = () => {
     if (draft.mileageStop && draft.mileageStop < draft.mileageStart) {
       return toast.error("Mileage Stop must be ≥ Start");
     }
-    await saveDailyEntry(draft);
-    toast.success("Entry saved");
+    try {
+      await saveDailyEntry(draft);
+      toast.success(editingId ? "Entry updated" : "Entry saved");
+    } catch (err: any) {
+      return toast.error(err?.message || "Failed to save");
+    }
     const next = await getDailyEntries();
     setEntries(next);
+    setEditingId(null);
     const lastStop = next.length ? next[next.length - 1].mileageStop : 0;
+    setForm(empty(today(), lastStop));
+  };
+
+  const startEdit = (e: DailyEntry) => {
+    setEditingId(e.id);
+    setForm({
+      date: e.date,
+      mileageStart: String(e.mileageStart || ""),
+      mileageStop: String(e.mileageStop || ""),
+      fuelFees: String(e.fuelFees || ""),
+      otherFees: String(e.otherFees || ""),
+      income: String(e.income || ""),
+    });
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    const lastStop = entries.length ? entries[entries.length - 1].mileageStop : 0;
     setForm(empty(today(), lastStop));
   };
 
   const remove = async (id: string) => {
     await deleteDailyEntry(id);
     toast.success("Entry deleted");
+    if (editingId === id) cancelEdit();
     load();
   };
 
