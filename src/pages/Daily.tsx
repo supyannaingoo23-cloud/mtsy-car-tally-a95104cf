@@ -192,12 +192,24 @@ const Daily = () => {
         </div>
 
 
-        <Button
-          type="submit"
-          className="w-full h-12 font-display tracking-wider uppercase bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow"
-        >
-          Save Entry
-        </Button>
+        <div className="flex gap-2">
+          {editingId && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={cancelEdit}
+              className="h-12 font-display tracking-wider uppercase"
+            >
+              Cancel
+            </Button>
+          )}
+          <Button
+            type="submit"
+            className="flex-1 h-12 font-display tracking-wider uppercase bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow"
+          >
+            {editingId ? "Update Entry" : "Save Entry"}
+          </Button>
+        </div>
       </form>
 
       <section className="surface-card border border-border rounded-xl overflow-hidden">
