@@ -126,9 +126,9 @@ const Daily = () => {
     <div className="space-y-5">
       <FuelPricesCard compact title="Fuel Prices (Today)" />
 
-      <form onSubmit={submit} className="surface-card border border-border rounded-xl p-4 space-y-4">
+      <form ref={formRef} onSubmit={submit} className="surface-card border border-border rounded-xl p-4 space-y-4">
         <h2 className="font-display font-bold uppercase tracking-wider text-sm text-primary">
-          New Daily Entry
+          {editingId ? `Edit Entry — ${form.date}` : "New Daily Entry"}
         </h2>
 
         <Field label="Date">
