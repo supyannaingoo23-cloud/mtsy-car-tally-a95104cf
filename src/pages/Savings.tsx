@@ -275,6 +275,12 @@ const Savings = () => {
         onClose={() => setDialogCat(null)}
         onSaved={refresh}
       />
+      <WithdrawDialog
+        category={editing?.category ?? null}
+        existing={editing}
+        onClose={() => setEditing(null)}
+        onSaved={refresh}
+      />
     </div>
   );
 };
