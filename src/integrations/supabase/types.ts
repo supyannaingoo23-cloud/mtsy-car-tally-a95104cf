@@ -20,18 +20,21 @@ export type Database = {
           email: string | null
           id: number
           owner_id: string | null
+          region: string | null
         }
         Insert: {
           claimed_at?: string
           email?: string | null
           id?: number
           owner_id?: string | null
+          region?: string | null
         }
         Update: {
           claimed_at?: string
           email?: string | null
           id?: number
           owner_id?: string | null
+          region?: string | null
         }
         Relationships: []
       }
@@ -66,6 +69,36 @@ export type Database = {
           mileage_start?: number
           mileage_stop?: number
           other_fees?: number
+          owner_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fuel_fills: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          liters: number
+          note: string
+          owner_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id: string
+          liters?: number
+          note?: string
+          owner_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          liters?: number
+          note?: string
           owner_id?: string | null
           updated_at?: string
         }
