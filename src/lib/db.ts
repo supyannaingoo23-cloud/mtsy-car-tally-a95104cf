@@ -489,6 +489,7 @@ export async function factoryReset(): Promise<void> {
     set(K_WITHDRAWALS, []),
     set(K_FUEL, emptyFuel),
     set(K_FUEL_HISTORY, []),
+    set(K_FUEL_FILLS, []),
   ]);
 
   await Promise.all([
@@ -496,6 +497,7 @@ export async function factoryReset(): Promise<void> {
     supabase.from("monthly_inputs").delete().neq("ym", "__never__"),
     supabase.from("withdrawals").delete().neq("id", "__never__"),
     supabase.from("fuel_history" as any).delete().neq("id", "__never__"),
+    supabase.from("fuel_fills" as any).delete().neq("id", "__never__"),
   ]);
   await supabase.from("maintenance_parts").delete().neq("key", "__never__");
   await supabase.from("maintenance_parts").upsert(defaultParts.map(fromPart));
