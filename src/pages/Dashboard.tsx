@@ -5,6 +5,7 @@ import LiveClock from "@/components/LiveClock";
 import StatCard from "@/components/StatCard";
 import FuelPricesCard from "@/components/FuelPricesCard";
 import FridayFuelReminder from "@/components/FridayFuelReminder";
+import QuotaCard from "@/components/QuotaCard";
 import { Button } from "@/components/ui/button";
 import {
   DailyEntry,
@@ -111,6 +112,7 @@ const Dashboard = () => {
           icon={<TrendingDown className="h-4 w-4 text-destructive" />}
         />
       </section>
+      <QuotaCard />
       <FuelPricesCard />
 
       <section className="space-y-3">
