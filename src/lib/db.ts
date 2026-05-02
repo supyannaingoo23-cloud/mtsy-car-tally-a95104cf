@@ -164,6 +164,18 @@ const toFuelHist = (r: any): FuelHistoryEntry => ({
   gasoline95: Number(r.gasoline_95) || 0,
   createdAt: r.created_at,
 });
+const toFuelFill = (r: any): FuelFill => ({
+  id: r.id,
+  date: r.date,
+  liters: Number(r.liters) || 0,
+  note: r.note ?? "",
+});
+const fromFuelFill = (f: FuelFill) => ({
+  id: f.id,
+  date: f.date,
+  liters: f.liters,
+  note: f.note,
+});
 
 // ---------- Daily ----------
 export async function getDailyEntries(): Promise<DailyEntry[]> {
