@@ -43,9 +43,12 @@ import {
   FuelPrices,
   getFuelHistory,
   getFuelPrices,
+  getRegion,
   pullFuelHistory,
   saveFuelPrices,
+  setRegion,
 } from "@/lib/db";
+import { MYANMAR_REGIONS } from "@/lib/regions";
 import {
   logout,
   setStoredPassword,
