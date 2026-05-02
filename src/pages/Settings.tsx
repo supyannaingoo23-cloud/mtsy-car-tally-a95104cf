@@ -89,9 +89,14 @@ const Settings = () => {
   // Fuel history
   const [fuelHistory, setFuelHistory] = useState<FuelHistoryEntry[]>([]);
 
+  // Region (Myanmar 14 regions/states)
+  const [region, setRegionState] = useState<string>("");
+  const [savingRegion, setSavingRegion] = useState(false);
+
   useEffect(() => {
     (async () => {
       setFuel(await getFuelPrices());
+      setRegionState((await getRegion()) ?? "");
       // Try cloud refresh first; fall back to local mirror
       try {
         setFuelHistory(await pullFuelHistory());
@@ -100,6 +105,19 @@ const Settings = () => {
       }
     })();
   }, []);
+
+  const saveRegion = async () => {
+    if (!region) return toast.error("Pick a region");
+    setSavingRegion(true);
+    try {
+      await setRegion(region);
+      toast.success("Region saved");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save");
+    } finally {
+      setSavingRegion(false);
+    }
+  };
 
   const refreshAutoMeta = () => setAutoMeta(getAutoBackupMeta());
 
