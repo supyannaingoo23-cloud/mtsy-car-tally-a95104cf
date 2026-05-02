@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import NumberInput from "@/components/NumberInput";
 import FuelPricesCard from "@/components/FuelPricesCard";
+import FuelFillsCard from "@/components/FuelFillsCard";
 import { toast } from "sonner";
 import {
   DailyEntry,
@@ -125,6 +126,7 @@ const Daily = () => {
   return (
     <div className="space-y-5">
       <FuelPricesCard compact title="Fuel Prices (Today)" />
+      <FuelFillsCard />
 
       <form ref={formRef} onSubmit={submit} className="surface-card border border-border rounded-xl p-4 space-y-4">
         <h2 className="font-display font-bold uppercase tracking-wider text-sm text-primary">
