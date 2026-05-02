@@ -55,6 +55,13 @@ export type FuelHistoryEntry = {
   createdAt: string;
 };
 
+export type FuelFill = {
+  id: string;
+  date: string; // yyyy-mm-dd
+  liters: number;
+  note: string;
+};
+
 export const PART_DEFS: { key: PartKey; label: string; kmInterval: number; monthsInterval?: number }[] = [
   { key: "engineOil", label: "Engine Oil", kmInterval: 5000, monthsInterval: 6 },
   { key: "gearOil", label: "Gear Oil", kmInterval: 30000 },
@@ -71,6 +78,8 @@ const K_PARTS = "mtsy:parts";
 const K_WITHDRAWALS = "mtsy:withdrawals";
 const K_FUEL = "mtsy:fuel";
 const K_FUEL_HISTORY = "mtsy:fuelHistory";
+const K_FUEL_FILLS = "mtsy:fuelFills";
+const K_REGION = "mtsy:region";
 
 export type SavingsCategory = "general" | "child" | "donation";
 
