@@ -228,6 +228,34 @@ const Settings = () => {
   return (
     <div className="space-y-4">
       <section className="surface-card border border-border rounded-xl p-5 space-y-4">
+        <h2 className="font-display uppercase tracking-wider text-sm font-bold flex items-center gap-2">
+          <Info className="h-4 w-4 text-primary" /> Region / State
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Where the car is registered (Myanmar — 14 regions and states).
+        </p>
+        <select
+          value={region}
+          onChange={(e) => setRegionState(e.target.value)}
+          className="w-full h-10 rounded-md bg-input border border-border px-3 text-sm font-medium"
+        >
+          <option value="">— Select region —</option>
+          {MYANMAR_REGIONS.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+        <Button
+          onClick={saveRegion}
+          disabled={savingRegion || !region}
+          className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow font-display uppercase tracking-wider"
+        >
+          {savingRegion ? "Saving…" : "Save Region"}
+        </Button>
+      </section>
+
+      <section className="surface-card border border-border rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-display uppercase tracking-wider text-sm font-bold flex items-center gap-2">
             <Fuel className="h-4 w-4 text-primary" /> Fuel Prices (Weekly)
@@ -236,6 +264,10 @@ const Settings = () => {
             {updatedLabel}
           </span>
         </div>
+        <p className="text-[11px] text-muted-foreground">
+          Reference only. These prices are <strong>not</strong> used in any financial
+          calculations — log actual spend in <em>Daily → Fuel Fees</em>.
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Gasoline 92">
             <NumberInput
