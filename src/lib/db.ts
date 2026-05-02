@@ -352,16 +352,38 @@ export async function getFuelLatestAndPrevious(): Promise<{
   return { latest: list[0], previous: list[1] };
 }
 
+// ---------- Fuel Fills (35L weekly quota log) ----------
+export async function getFuelFills(): Promise<FuelFill[]> {
+  return (await get<FuelFill[]>(K_FUEL_FILLS)) ?? [];
+}
+export async function saveFuelFill(f: FuelFill) {
+  const { error } = await supabase.from("fuel_fills" as any).upsert(fromFuelFill(f));
+  if (error) throw error;
+  const list = await getFuelFills();
+  const idx = list.findIndex((x) => x.id === f.id);
+  if (idx >= 0) list[idx] = f;
+  else list.push(f);
+  list.sort((a, b) => b.date.localeCompare(a.date));
+  await set(K_FUEL_FILLS, list);
+}
+export async function deleteFuelFill(id: string) {
+  const { error } = await supabase.from("fuel_fills" as any).delete().eq("id", id);
+  if (error) throw error;
+  const list = await getFuelFills();
+  await set(K_FUEL_FILLS, list.filter((x) => x.id !== id));
+}
+
 // ---------- Cloud Sync (pull-on-startup) ----------
 export async function pullFromCloud(): Promise<void> {
   try {
-    const [d, m, p, w, f, fh] = await Promise.all([
+    const [d, m, p, w, f, fh, ff] = await Promise.all([
       supabase.from("daily_entries").select("*").order("date"),
       supabase.from("monthly_inputs").select("*"),
       supabase.from("maintenance_parts").select("*"),
       supabase.from("withdrawals").select("*").order("date", { ascending: false }),
       supabase.from("fuel_prices").select("*").eq("id", 1).maybeSingle(),
       supabase.from("fuel_history").select("*").order("created_at", { ascending: false }),
+      supabase.from("fuel_fills" as any).select("*").order("date", { ascending: false }),
     ]);
 
     if (!d.error && d.data) {
@@ -389,9 +411,35 @@ export async function pullFromCloud(): Promise<void> {
     if (!fh.error && fh.data) {
       await set(K_FUEL_HISTORY, (fh.data as any[]).map(toFuelHist));
     }
+    if (!ff.error && ff.data) {
+      await set(K_FUEL_FILLS, (ff.data as any[]).map(toFuelFill));
+    }
   } catch (e) {
     console.warn("[mtsy] cloud pull failed (offline?)", e);
   }
+}
+
+// ---------- Region (stored on app_owner row) ----------
+export async function getRegion(): Promise<string | null> {
+  // Try local first for fast reads
+  const local = (await get<string | null>(K_REGION)) ?? null;
+  if (local) return local;
+  const { data } = await supabase
+    .from("app_owner" as any)
+    .select("region")
+    .eq("id", 1)
+    .maybeSingle();
+  const r = (data as any)?.region ?? null;
+  if (r) await set(K_REGION, r);
+  return r;
+}
+export async function setRegion(region: string): Promise<void> {
+  const { error } = await supabase
+    .from("app_owner" as any)
+    .update({ region })
+    .eq("id", 1);
+  if (error) throw error;
+  await set(K_REGION, region);
 }
 
 // ---------- App Owner (Google sign-in lock) ----------
