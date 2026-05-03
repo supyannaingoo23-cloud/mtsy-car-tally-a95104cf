@@ -2,14 +2,19 @@
 import { get, set, update } from "idb-keyval";
 import { supabase } from "@/integrations/supabase/client";
 
+export type TripType = "city" | "long";
+
 export type DailyEntry = {
-  id: string; // iso date yyyy-mm-dd
+  id: string;
   date: string; // yyyy-mm-dd
   mileageStart: number;
   mileageStop: number;
   fuelFees: number;
   otherFees: number;
   income: number;
+  tripType: TripType;
+  tripStart?: string | null; // yyyy-mm-dd (long only)
+  tripEnd?: string | null;   // yyyy-mm-dd (long only)
 };
 
 export type MonthlyInputs = {
@@ -60,6 +65,7 @@ export type FuelFill = {
   date: string; // yyyy-mm-dd
   liters: number;
   note: string;
+  region: string;
 };
 
 export const PART_DEFS: { key: PartKey; label: string; kmInterval: number; monthsInterval?: number }[] = [
@@ -100,6 +106,9 @@ const toDaily = (r: any): DailyEntry => ({
   fuelFees: Number(r.fuel_fees) || 0,
   otherFees: Number(r.other_fees) || 0,
   income: Number(r.income) || 0,
+  tripType: (r.trip_type as TripType) || "city",
+  tripStart: r.trip_start ?? null,
+  tripEnd: r.trip_end ?? null,
 });
 const fromDaily = (e: DailyEntry) => ({
   id: e.id,
@@ -109,6 +118,9 @@ const fromDaily = (e: DailyEntry) => ({
   fuel_fees: e.fuelFees,
   other_fees: e.otherFees,
   income: e.income,
+  trip_type: e.tripType ?? "city",
+  trip_start: e.tripStart ?? null,
+  trip_end: e.tripEnd ?? null,
 });
 const toMonthly = (r: any): MonthlyInputs => ({
   gc: Number(r.gc) || 0,
@@ -169,12 +181,14 @@ const toFuelFill = (r: any): FuelFill => ({
   date: r.date,
   liters: Number(r.liters) || 0,
   note: r.note ?? "",
+  region: r.region ?? "",
 });
 const fromFuelFill = (f: FuelFill) => ({
   id: f.id,
   date: f.date,
   liters: f.liters,
   note: f.note,
+  region: f.region ?? "",
 });
 
 // ---------- Daily ----------
