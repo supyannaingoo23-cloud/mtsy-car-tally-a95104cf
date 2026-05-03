@@ -367,6 +367,22 @@ const Settings = () => {
                   </div>
                   <HistoryCell label="92" value={h.gasoline92} delta={prev ? d92 : undefined} />
                   <HistoryCell label="95" value={h.gasoline95} delta={prev ? d95 : undefined} />
+                  <button
+                    type="button"
+                    onClick={() => setEditingHistory(h)}
+                    className="text-xs text-muted-foreground hover:text-primary px-2"
+                    aria-label="Edit"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPendingHistDelete(h)}
+                    className="p-2 text-muted-foreground hover:text-destructive"
+                    aria-label="Delete"
+                  >
+                    <AlertTriangle className="h-4 w-4" />
+                  </button>
                 </li>
               );
             })}
