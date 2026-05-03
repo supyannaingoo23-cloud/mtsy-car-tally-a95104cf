@@ -86,6 +86,7 @@ const K_FUEL = "mtsy:fuel";
 const K_FUEL_HISTORY = "mtsy:fuelHistory";
 const K_FUEL_FILLS = "mtsy:fuelFills";
 const K_REGION = "mtsy:region";
+const K_QUOTA = "mtsy:quotaLiters";
 
 export type SavingsCategory = "general" | "child" | "donation";
 
