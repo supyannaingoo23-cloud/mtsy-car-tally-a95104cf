@@ -13,6 +13,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import StatCard from "@/components/StatCard";
@@ -48,6 +58,7 @@ const Savings = () => {
   const [range, setRange] = useState<Range>("month");
   const [dialogCat, setDialogCat] = useState<SavingsCategory | null>(null);
   const [editing, setEditing] = useState<Withdrawal | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Withdrawal | null>(null);
 
   const refresh = async () => {
     const [e, m, w] = await Promise.all([
