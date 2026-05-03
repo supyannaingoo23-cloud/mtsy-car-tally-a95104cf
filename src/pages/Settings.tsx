@@ -146,6 +146,8 @@ const Settings = () => {
     }
   };
 
+  const refreshAutoMeta = () => setAutoMeta(getAutoBackupMeta());
+
   const runAutoBackupNow = async () => {
     setAutoBusy(true);
     try {
