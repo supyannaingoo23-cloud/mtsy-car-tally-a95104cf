@@ -109,6 +109,7 @@ const Settings = () => {
     (async () => {
       setFuel(await getFuelPrices());
       setRegionState((await getRegion()) ?? "");
+      setQuota(await getQuotaLiters());
       // Try cloud refresh first; fall back to local mirror
       try {
         setFuelHistory(await pullFuelHistory());
@@ -131,7 +132,19 @@ const Settings = () => {
     }
   };
 
-  const refreshAutoMeta = () => setAutoMeta(getAutoBackupMeta());
+  const saveQuota = async () => {
+    if (!quota || quota <= 0) return toast.error("Enter quota > 0");
+    setSavingQuota(true);
+    try {
+      await setQuotaLiters(quota);
+      toast.success("Fuel quota saved");
+      window.dispatchEvent(new CustomEvent("mtsy:fuel-fills-changed"));
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save");
+    } finally {
+      setSavingQuota(false);
+    }
+  };
 
   const runAutoBackupNow = async () => {
     setAutoBusy(true);
