@@ -97,6 +97,14 @@ const Settings = () => {
   const [region, setRegionState] = useState<string>("");
   const [savingRegion, setSavingRegion] = useState(false);
 
+  // Quota liters
+  const [quota, setQuota] = useState<number>(35);
+  const [savingQuota, setSavingQuota] = useState(false);
+
+  // Fuel-history edit/delete
+  const [editingHistory, setEditingHistory] = useState<FuelHistoryEntry | null>(null);
+  const [pendingHistDelete, setPendingHistDelete] = useState<FuelHistoryEntry | null>(null);
+
   useEffect(() => {
     (async () => {
       setFuel(await getFuelPrices());
