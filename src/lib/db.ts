@@ -12,9 +12,9 @@ export type DailyEntry = {
   fuelFees: number;
   otherFees: number;
   income: number;
-  tripType: TripType;
-  tripStart?: string | null; // yyyy-mm-dd (long only)
-  tripEnd?: string | null;   // yyyy-mm-dd (long only)
+  tripType?: TripType;
+  tripStart?: string | null;
+  tripEnd?: string | null;
 };
 
 export type MonthlyInputs = {
@@ -62,10 +62,10 @@ export type FuelHistoryEntry = {
 
 export type FuelFill = {
   id: string;
-  date: string; // yyyy-mm-dd
+  date: string;
   liters: number;
   note: string;
-  region: string;
+  region?: string;
 };
 
 export const PART_DEFS: { key: PartKey; label: string; kmInterval: number; monthsInterval?: number }[] = [
