@@ -630,6 +630,45 @@ const Settings = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <FuelHistoryEditDialog
+        entry={editingHistory}
+        onClose={() => setEditingHistory(null)}
+        onSaved={async () => {
+          setEditingHistory(null);
+          setFuelHistory(await pullFuelHistory());
+        }}
+      />
+
+      <AlertDialog open={!!pendingHistDelete} onOpenChange={(o) => !o && setPendingHistDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete fuel-price record?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingHistDelete?.date} · 92: {pendingHistDelete?.gasoline92} · 95: {pendingHistDelete?.gasoline95}. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!pendingHistDelete) return;
+                try {
+                  await deleteFuelHistory(pendingHistDelete.id);
+                  setPendingHistDelete(null);
+                  setFuelHistory(await pullFuelHistory());
+                  toast.success("Record deleted");
+                } catch (err: any) {
+                  toast.error(err?.message || "Failed to delete");
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
