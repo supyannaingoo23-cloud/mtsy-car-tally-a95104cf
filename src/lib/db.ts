@@ -457,7 +457,27 @@ export async function setRegion(region: string): Promise<void> {
   await set(K_REGION, region);
 }
 
-// ---------- App Owner (Google sign-in lock) ----------
+// ---------- Quota Liters (per-fill quota limit, editable in Settings) ----------
+export async function getQuotaLiters(): Promise<number> {
+  const local = await get<number>(K_QUOTA);
+  if (typeof local === "number" && local > 0) return local;
+  const { data } = await supabase
+    .from("app_owner" as any)
+    .select("quota_liters")
+    .eq("id", 1)
+    .maybeSingle();
+  const q = Number((data as any)?.quota_liters) || 35;
+  await set(K_QUOTA, q);
+  return q;
+}
+export async function setQuotaLiters(liters: number): Promise<void> {
+  const { error } = await supabase
+    .from("app_owner" as any)
+    .update({ quota_liters: liters })
+    .eq("id", 1);
+  if (error) throw error;
+  await set(K_QUOTA, liters);
+}
 export type AppOwner = { ownerId: string; email: string | null; claimedAt: string } | null;
 
 export async function getAppOwner(): Promise<AppOwner> {
