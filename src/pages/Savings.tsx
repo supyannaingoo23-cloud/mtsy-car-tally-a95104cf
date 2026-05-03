@@ -268,7 +268,10 @@ const Savings = () => {
                     <Pencil className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(t.id)}
+                    onClick={() => {
+                      const w = withdrawals.find((x) => x.id === t.id);
+                      if (w) setPendingDelete(w);
+                    }}
                     className="text-muted-foreground hover:text-destructive transition-smooth"
                     aria-label="Delete withdrawal"
                   >
@@ -292,6 +295,32 @@ const Savings = () => {
         onClose={() => setEditing(null)}
         onSaved={refresh}
       />
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete withdrawal?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete?.date} · {pendingDelete && SAVINGS_LABEL[pendingDelete.category]} · {pendingDelete && fmtMoney(pendingDelete.amount)}. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!pendingDelete) return;
+                await deleteWithdrawal(pendingDelete.id);
+                await refresh();
+                setPendingDelete(null);
+                toast.success("Withdrawal deleted");
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
