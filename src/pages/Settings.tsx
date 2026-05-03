@@ -60,6 +60,13 @@ import {
   verifyPassword,
 } from "@/components/Login";
 import { fmtNumber } from "@/lib/format";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Settings = () => {
   const fileRef = useRef<HTMLInputElement>(null);
