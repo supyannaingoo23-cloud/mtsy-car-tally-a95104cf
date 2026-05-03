@@ -283,10 +283,22 @@ const Settings = () => {
       </section>
 
       <section className="surface-card border border-border rounded-xl p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display uppercase tracking-wider text-sm font-bold flex items-center gap-2">
-            <Fuel className="h-4 w-4 text-primary" /> Fuel Prices (Weekly)
-          </h2>
+        <h2 className="font-display uppercase tracking-wider text-sm font-bold flex items-center gap-2">
+          <Fuel className="h-4 w-4 text-primary" /> Fuel Quota (Liters)
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Default per-fill quota in liters (e.g. 35L). Used as the default in the
+          New Fuel Fill popup and shown on the Dashboard.
+        </p>
+        <NumberInput value={quota} onChange={setQuota} placeholder="35" />
+        <Button
+          onClick={saveQuota}
+          disabled={savingQuota || !quota}
+          className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow font-display uppercase tracking-wider"
+        >
+          {savingQuota ? "Saving…" : "Save Quota"}
+        </Button>
+      </section>
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
             {updatedLabel}
           </span>
