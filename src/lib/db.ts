@@ -2,14 +2,19 @@
 import { get, set, update } from "idb-keyval";
 import { supabase } from "@/integrations/supabase/client";
 
+export type TripType = "city" | "long";
+
 export type DailyEntry = {
-  id: string; // iso date yyyy-mm-dd
+  id: string;
   date: string; // yyyy-mm-dd
   mileageStart: number;
   mileageStop: number;
   fuelFees: number;
   otherFees: number;
   income: number;
+  tripType?: TripType;
+  tripStart?: string | null;
+  tripEnd?: string | null;
 };
 
 export type MonthlyInputs = {
@@ -57,9 +62,10 @@ export type FuelHistoryEntry = {
 
 export type FuelFill = {
   id: string;
-  date: string; // yyyy-mm-dd
+  date: string;
   liters: number;
   note: string;
+  region?: string;
 };
 
 export const PART_DEFS: { key: PartKey; label: string; kmInterval: number; monthsInterval?: number }[] = [
@@ -80,6 +86,7 @@ const K_FUEL = "mtsy:fuel";
 const K_FUEL_HISTORY = "mtsy:fuelHistory";
 const K_FUEL_FILLS = "mtsy:fuelFills";
 const K_REGION = "mtsy:region";
+const K_QUOTA = "mtsy:quotaLiters";
 
 export type SavingsCategory = "general" | "child" | "donation";
 
@@ -100,6 +107,9 @@ const toDaily = (r: any): DailyEntry => ({
   fuelFees: Number(r.fuel_fees) || 0,
   otherFees: Number(r.other_fees) || 0,
   income: Number(r.income) || 0,
+  tripType: (r.trip_type as TripType) || "city",
+  tripStart: r.trip_start ?? null,
+  tripEnd: r.trip_end ?? null,
 });
 const fromDaily = (e: DailyEntry) => ({
   id: e.id,
@@ -109,6 +119,9 @@ const fromDaily = (e: DailyEntry) => ({
   fuel_fees: e.fuelFees,
   other_fees: e.otherFees,
   income: e.income,
+  trip_type: e.tripType ?? "city",
+  trip_start: e.tripStart ?? null,
+  trip_end: e.tripEnd ?? null,
 });
 const toMonthly = (r: any): MonthlyInputs => ({
   gc: Number(r.gc) || 0,
@@ -169,12 +182,14 @@ const toFuelFill = (r: any): FuelFill => ({
   date: r.date,
   liters: Number(r.liters) || 0,
   note: r.note ?? "",
+  region: r.region ?? "",
 });
 const fromFuelFill = (f: FuelFill) => ({
   id: f.id,
   date: f.date,
   liters: f.liters,
   note: f.note,
+  region: f.region ?? "",
 });
 
 // ---------- Daily ----------
@@ -351,6 +366,23 @@ export async function getFuelLatestAndPrevious(): Promise<{
   const list = await getFuelHistory();
   return { latest: list[0], previous: list[1] };
 }
+export async function updateFuelHistory(
+  id: string,
+  patch: { date?: string; gasoline92?: number; gasoline95?: number },
+): Promise<void> {
+  const row: any = {};
+  if (patch.date !== undefined) row.date = patch.date;
+  if (patch.gasoline92 !== undefined) row.gasoline_92 = patch.gasoline92;
+  if (patch.gasoline95 !== undefined) row.gasoline_95 = patch.gasoline95;
+  const { error } = await supabase.from("fuel_history" as any).update(row).eq("id", id);
+  if (error) throw error;
+  await pullFuelHistory();
+}
+export async function deleteFuelHistory(id: string): Promise<void> {
+  const { error } = await supabase.from("fuel_history" as any).delete().eq("id", id);
+  if (error) throw error;
+  await pullFuelHistory();
+}
 
 // ---------- Fuel Fills (35L weekly quota log) ----------
 export async function getFuelFills(): Promise<FuelFill[]> {
@@ -442,7 +474,27 @@ export async function setRegion(region: string): Promise<void> {
   await set(K_REGION, region);
 }
 
-// ---------- App Owner (Google sign-in lock) ----------
+// ---------- Quota Liters (per-fill quota limit, editable in Settings) ----------
+export async function getQuotaLiters(): Promise<number> {
+  const local = await get<number>(K_QUOTA);
+  if (typeof local === "number" && local > 0) return local;
+  const { data } = await supabase
+    .from("app_owner" as any)
+    .select("quota_liters")
+    .eq("id", 1)
+    .maybeSingle();
+  const q = Number((data as any)?.quota_liters) || 35;
+  await set(K_QUOTA, q);
+  return q;
+}
+export async function setQuotaLiters(liters: number): Promise<void> {
+  const { error } = await supabase
+    .from("app_owner" as any)
+    .update({ quota_liters: liters })
+    .eq("id", 1);
+  if (error) throw error;
+  await set(K_QUOTA, liters);
+}
 export type AppOwner = { ownerId: string; email: string | null; claimedAt: string } | null;
 
 export async function getAppOwner(): Promise<AppOwner> {

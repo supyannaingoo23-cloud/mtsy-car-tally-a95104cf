@@ -41,12 +41,16 @@ import {
   factoryReset,
   FuelHistoryEntry,
   FuelPrices,
+  deleteFuelHistory,
   getFuelHistory,
   getFuelPrices,
+  getQuotaLiters,
   getRegion,
   pullFuelHistory,
   saveFuelPrices,
+  setQuotaLiters,
   setRegion,
+  updateFuelHistory,
 } from "@/lib/db";
 import { MYANMAR_REGIONS } from "@/lib/regions";
 import {
@@ -56,6 +60,13 @@ import {
   verifyPassword,
 } from "@/components/Login";
 import { fmtNumber } from "@/lib/format";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Settings = () => {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -93,10 +104,19 @@ const Settings = () => {
   const [region, setRegionState] = useState<string>("");
   const [savingRegion, setSavingRegion] = useState(false);
 
+  // Quota liters
+  const [quota, setQuota] = useState<number>(35);
+  const [savingQuota, setSavingQuota] = useState(false);
+
+  // Fuel-history edit/delete
+  const [editingHistory, setEditingHistory] = useState<FuelHistoryEntry | null>(null);
+  const [pendingHistDelete, setPendingHistDelete] = useState<FuelHistoryEntry | null>(null);
+
   useEffect(() => {
     (async () => {
       setFuel(await getFuelPrices());
       setRegionState((await getRegion()) ?? "");
+      setQuota(await getQuotaLiters());
       // Try cloud refresh first; fall back to local mirror
       try {
         setFuelHistory(await pullFuelHistory());
@@ -116,6 +136,20 @@ const Settings = () => {
       toast.error(err?.message || "Failed to save");
     } finally {
       setSavingRegion(false);
+    }
+  };
+
+  const saveQuota = async () => {
+    if (!quota || quota <= 0) return toast.error("Enter quota > 0");
+    setSavingQuota(true);
+    try {
+      await setQuotaLiters(quota);
+      toast.success("Fuel quota saved");
+      window.dispatchEvent(new CustomEvent("mtsy:fuel-fills-changed"));
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save");
+    } finally {
+      setSavingQuota(false);
     }
   };
 
@@ -256,6 +290,24 @@ const Settings = () => {
       </section>
 
       <section className="surface-card border border-border rounded-xl p-5 space-y-4">
+        <h2 className="font-display uppercase tracking-wider text-sm font-bold flex items-center gap-2">
+          <Fuel className="h-4 w-4 text-primary" /> Fuel Quota (Liters)
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Default per-fill quota in liters (e.g. 35L). Used as the default in the
+          New Fuel Fill popup and shown on the Dashboard.
+        </p>
+        <NumberInput value={quota} onChange={setQuota} placeholder="35" />
+        <Button
+          onClick={saveQuota}
+          disabled={savingQuota || !quota}
+          className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow font-display uppercase tracking-wider"
+        >
+          {savingQuota ? "Saving…" : "Save Quota"}
+        </Button>
+      </section>
+
+      <section className="surface-card border border-border rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-display uppercase tracking-wider text-sm font-bold flex items-center gap-2">
             <Fuel className="h-4 w-4 text-primary" /> Fuel Prices (Weekly)
@@ -322,6 +374,22 @@ const Settings = () => {
                   </div>
                   <HistoryCell label="92" value={h.gasoline92} delta={prev ? d92 : undefined} />
                   <HistoryCell label="95" value={h.gasoline95} delta={prev ? d95 : undefined} />
+                  <button
+                    type="button"
+                    onClick={() => setEditingHistory(h)}
+                    className="text-xs text-muted-foreground hover:text-primary px-2"
+                    aria-label="Edit"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPendingHistDelete(h)}
+                    className="p-2 text-muted-foreground hover:text-destructive"
+                    aria-label="Delete"
+                  >
+                    <AlertTriangle className="h-4 w-4" />
+                  </button>
                 </li>
               );
             })}
@@ -569,6 +637,45 @@ const Settings = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <FuelHistoryEditDialog
+        entry={editingHistory}
+        onClose={() => setEditingHistory(null)}
+        onSaved={async () => {
+          setEditingHistory(null);
+          setFuelHistory(await pullFuelHistory());
+        }}
+      />
+
+      <AlertDialog open={!!pendingHistDelete} onOpenChange={(o) => !o && setPendingHistDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete fuel-price record?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingHistDelete?.date} · 92: {pendingHistDelete?.gasoline92} · 95: {pendingHistDelete?.gasoline95}. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!pendingHistDelete) return;
+                try {
+                  await deleteFuelHistory(pendingHistDelete.id);
+                  setPendingHistDelete(null);
+                  setFuelHistory(await pullFuelHistory());
+                  toast.success("Record deleted");
+                } catch (err: any) {
+                  toast.error(err?.message || "Failed to delete");
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
@@ -657,3 +764,76 @@ const HistoryCell = ({
 
 export default Settings;
 
+const FuelHistoryEditDialog = ({
+  entry,
+  onClose,
+  onSaved,
+}: {
+  entry: FuelHistoryEntry | null;
+  onClose: () => void;
+  onSaved: () => void | Promise<void>;
+}) => {
+  const [date, setDate] = useState("");
+  const [g92, setG92] = useState<number>(0);
+  const [g95, setG95] = useState<number>(0);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (entry) {
+      setDate(entry.date);
+      setG92(entry.gasoline92);
+      setG95(entry.gasoline95);
+    }
+  }, [entry]);
+
+  const submit = async () => {
+    if (!entry) return;
+    setBusy(true);
+    try {
+      await updateFuelHistory(entry.id, { date, gasoline92: g92, gasoline95: g95 });
+      toast.success("Record updated");
+      await onSaved();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!entry} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="font-display uppercase tracking-wider">
+            Edit Fuel-Price Record
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Field label="Date">
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Gasoline 92">
+              <NumberInput value={g92} onChange={setG92} placeholder="0" />
+            </Field>
+            <Field label="Gasoline 95">
+              <NumberInput value={g95} onChange={setG95} placeholder="0" />
+            </Field>
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} className="flex-1" disabled={busy}>
+            Cancel
+          </Button>
+          <Button
+            onClick={submit}
+            disabled={busy}
+            className="flex-1 bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow"
+          >
+            {busy ? "Saving…" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};

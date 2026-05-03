@@ -10,25 +10,49 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { FuelFill, deleteFuelFill, getFuelFills, saveFuelFill } from "@/lib/db";
-import { computeQuotaStatus, QUOTA_LITERS } from "@/lib/quota";
+import {
+  FuelFill,
+  deleteFuelFill,
+  getFuelFills,
+  getQuotaLiters,
+  getRegion,
+  saveFuelFill,
+} from "@/lib/db";
+import { MYANMAR_REGIONS } from "@/lib/regions";
 import { fmtNumber } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
 const FuelFillsCard = () => {
   const [fills, setFills] = useState<FuelFill[]>([]);
+  const [quota, setQuota] = useState<number>(35);
+  const [defaultRegion, setDefaultRegion] = useState<string>("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<FuelFill | null>(null);
   const [date, setDate] = useState(today());
-  const [liters, setLiters] = useState<number>(QUOTA_LITERS);
+  const [region, setRegion] = useState<string>("");
+  const [liters, setLiters] = useState<number>(35);
   const [note, setNote] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<FuelFill | null>(null);
 
-  const load = async () => setFills(await getFuelFills());
+  const load = async () => {
+    const [f, q, r] = await Promise.all([getFuelFills(), getQuotaLiters(), getRegion()]);
+    setFills(f);
+    setQuota(q);
+    setDefaultRegion(r ?? "");
+  };
 
   useEffect(() => {
     load();
@@ -37,7 +61,8 @@ const FuelFillsCard = () => {
   const startNew = () => {
     setEditing(null);
     setDate(today());
-    setLiters(QUOTA_LITERS);
+    setRegion(defaultRegion || "");
+    setLiters(quota);
     setNote("");
     setOpen(true);
   };
@@ -45,6 +70,7 @@ const FuelFillsCard = () => {
   const startEdit = (f: FuelFill) => {
     setEditing(f);
     setDate(f.date);
+    setRegion(f.region ?? "");
     setLiters(f.liters);
     setNote(f.note);
     setOpen(true);
@@ -52,6 +78,7 @@ const FuelFillsCard = () => {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!region) return toast.error("Pick a region/state");
     if (!liters || liters <= 0) return toast.error("Enter liters > 0");
     try {
       await saveFuelFill({
@@ -59,22 +86,29 @@ const FuelFillsCard = () => {
         date,
         liters,
         note: note.trim(),
+        region,
       });
       toast.success(editing ? "Fuel fill updated" : "Fuel fill recorded");
       setOpen(false);
       await load();
+      window.dispatchEvent(new CustomEvent("mtsy:fuel-fills-changed"));
     } catch (err: any) {
       toast.error(err?.message || "Failed to save");
     }
   };
 
-  const remove = async (id: string) => {
-    await deleteFuelFill(id);
-    toast.success("Fuel fill deleted");
-    load();
+  const confirmRemove = async () => {
+    if (!pendingDelete) return;
+    try {
+      await deleteFuelFill(pendingDelete.id);
+      toast.success("Fuel fill deleted");
+      setPendingDelete(null);
+      await load();
+      window.dispatchEvent(new CustomEvent("mtsy:fuel-fills-changed"));
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete");
+    }
   };
-
-  const status = computeQuotaStatus(fills);
 
   return (
     <section className="surface-card border border-border rounded-xl overflow-hidden">
@@ -94,15 +128,6 @@ const FuelFillsCard = () => {
         </Button>
       </div>
 
-      <div
-        className={cn(
-          "px-4 py-2 text-xs border-b border-border/60",
-          status.canRefuelToday ? "text-success" : "text-muted-foreground",
-        )}
-      >
-        {status.reason}
-      </div>
-
       {fills.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">No fills logged yet.</p>
       ) : (
@@ -111,9 +136,10 @@ const FuelFillsCard = () => {
             <li key={f.id} className="p-3 flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold">{f.date}</p>
-                {f.note && (
-                  <p className="text-xs text-muted-foreground truncate">{f.note}</p>
-                )}
+                <p className="text-xs text-muted-foreground truncate">
+                  {f.region || "—"}
+                  {f.note && ` · ${f.note}`}
+                </p>
               </div>
               <span className="font-display font-bold tabular text-sm text-primary">
                 {fmtNumber(f.liters)} L
@@ -128,7 +154,7 @@ const FuelFillsCard = () => {
               </button>
               <button
                 type="button"
-                onClick={() => remove(f.id)}
+                onClick={() => setPendingDelete(f)}
                 className="p-2 text-muted-foreground hover:text-destructive transition-smooth"
                 aria-label="Delete"
               >
@@ -149,15 +175,33 @@ const FuelFillsCard = () => {
           <form onSubmit={submit} className="space-y-3">
             <div className="space-y-1.5">
               <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
-                Date
+                Region / State *
               </Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <select
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                required
+                className="w-full h-10 rounded-md bg-input border border-border px-3 text-sm font-medium"
+              >
+                <option value="">— Select region —</option>
+                {MYANMAR_REGIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
                 Liters
               </Label>
-              <NumberInput value={liters} onChange={setLiters} placeholder="35" />
+              <NumberInput value={liters} onChange={setLiters} placeholder={String(quota)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+                Date
+              </Label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
@@ -179,6 +223,26 @@ const FuelFillsCard = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete fuel fill?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete?.date} · {pendingDelete?.region} · {pendingDelete?.liters}L. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRemove}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 };

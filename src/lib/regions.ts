@@ -1,5 +1,6 @@
-// 14 Regions and States of Myanmar (administrative divisions)
+// Nay Pyi Taw + 14 Regions/States of Myanmar
 export const MYANMAR_REGIONS = [
+  "Nay Pyi Taw (Union Territory)",
   "Ayeyarwady Region",
   "Bago Region",
   "Magway Region",

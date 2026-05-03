@@ -20,6 +20,7 @@ export type Database = {
           email: string | null
           id: number
           owner_id: string | null
+          quota_liters: number
           region: string | null
         }
         Insert: {
@@ -27,6 +28,7 @@ export type Database = {
           email?: string | null
           id?: number
           owner_id?: string | null
+          quota_liters?: number
           region?: string | null
         }
         Update: {
@@ -34,6 +36,7 @@ export type Database = {
           email?: string | null
           id?: number
           owner_id?: string | null
+          quota_liters?: number
           region?: string | null
         }
         Relationships: []
@@ -48,6 +51,9 @@ export type Database = {
           mileage_stop: number
           other_fees: number
           owner_id: string | null
+          trip_end: string | null
+          trip_start: string | null
+          trip_type: string
           updated_at: string
         }
         Insert: {
@@ -59,6 +65,9 @@ export type Database = {
           mileage_stop?: number
           other_fees?: number
           owner_id?: string | null
+          trip_end?: string | null
+          trip_start?: string | null
+          trip_type?: string
           updated_at?: string
         }
         Update: {
@@ -70,6 +79,9 @@ export type Database = {
           mileage_stop?: number
           other_fees?: number
           owner_id?: string | null
+          trip_end?: string | null
+          trip_start?: string | null
+          trip_type?: string
           updated_at?: string
         }
         Relationships: []
@@ -82,6 +94,7 @@ export type Database = {
           liters: number
           note: string
           owner_id: string | null
+          region: string
           updated_at: string
         }
         Insert: {
@@ -91,6 +104,7 @@ export type Database = {
           liters?: number
           note?: string
           owner_id?: string | null
+          region?: string
           updated_at?: string
         }
         Update: {
@@ -100,6 +114,7 @@ export type Database = {
           liters?: number
           note?: string
           owner_id?: string | null
+          region?: string
           updated_at?: string
         }
         Relationships: []

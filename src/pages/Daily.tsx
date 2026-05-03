@@ -6,9 +6,20 @@ import { Label } from "@/components/ui/label";
 import NumberInput from "@/components/NumberInput";
 import FuelPricesCard from "@/components/FuelPricesCard";
 import FuelFillsCard from "@/components/FuelFillsCard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
   DailyEntry,
+  TripType,
   dailyProfit,
   deleteDailyEntry,
   getDailyEntries,
@@ -29,6 +40,9 @@ type FormState = {
   fuelFees: string;
   otherFees: string;
   income: string;
+  tripType: TripType;
+  tripStart: string;
+  tripEnd: string;
 };
 
 const empty = (date: string, mileageStart: number): FormState => ({
@@ -38,12 +52,24 @@ const empty = (date: string, mileageStart: number): FormState => ({
   fuelFees: "",
   otherFees: "",
   income: "",
+  tripType: "city",
+  tripStart: "",
+  tripEnd: "",
 });
+
+const tripDays = (start?: string | null, end?: string | null) => {
+  if (!start || !end) return 0;
+  const a = new Date(start + "T00:00:00").getTime();
+  const b = new Date(end + "T00:00:00").getTime();
+  if (isNaN(a) || isNaN(b) || b < a) return 0;
+  return Math.round((b - a) / 86_400_000) + 1;
+};
 
 const Daily = () => {
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [form, setForm] = useState<FormState>(empty(today(), 0));
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<DailyEntry | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const load = async () => {
@@ -72,6 +98,9 @@ const Daily = () => {
       fuelFees: Number(form.fuelFees) || 0,
       otherFees: Number(form.otherFees) || 0,
       income: Number(form.income) || 0,
+      tripType: form.tripType,
+      tripStart: form.tripType === "long" ? form.tripStart || null : null,
+      tripEnd: form.tripType === "long" ? form.tripEnd || null : null,
     }),
     [form, editingId],
   );
@@ -81,6 +110,9 @@ const Daily = () => {
     if (!form.date) return toast.error("Pick a date");
     if (draft.mileageStop && draft.mileageStop < draft.mileageStart) {
       return toast.error("Mileage Stop must be ≥ Start");
+    }
+    if (form.tripType === "long" && (!form.tripStart || !form.tripEnd)) {
+      return toast.error("Long trip needs start & end dates");
     }
     try {
       await saveDailyEntry(draft);
@@ -104,6 +136,9 @@ const Daily = () => {
       fuelFees: String(e.fuelFees || ""),
       otherFees: String(e.otherFees || ""),
       income: String(e.income || ""),
+      tripType: e.tripType ?? "city",
+      tripStart: e.tripStart ?? "",
+      tripEnd: e.tripEnd ?? "",
     });
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -114,11 +149,17 @@ const Daily = () => {
     setForm(empty(today(), lastStop));
   };
 
-  const remove = async (id: string) => {
-    await deleteDailyEntry(id);
-    toast.success("Entry deleted");
-    if (editingId === id) cancelEdit();
-    load();
+  const confirmRemove = async () => {
+    if (!pendingDelete) return;
+    try {
+      await deleteDailyEntry(pendingDelete.id);
+      toast.success("Entry deleted");
+      if (editingId === pendingDelete.id) cancelEdit();
+      setPendingDelete(null);
+      load();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete");
+    }
   };
 
   const recent = [...entries].reverse().slice(0, 30);
@@ -140,6 +181,60 @@ const Daily = () => {
             onChange={(e) => setForm({ ...form, date: e.target.value })}
           />
         </Field>
+
+        <div className="space-y-1.5">
+          <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+            Trip Type
+          </Label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, tripType: "city" })}
+              className={cn(
+                "h-10 rounded-md border text-sm font-display uppercase tracking-wider",
+                form.tripType === "city"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-secondary/40 text-muted-foreground",
+              )}
+            >
+              City Trip · မြို့တွင်း
+            </button>
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, tripType: "long" })}
+              className={cn(
+                "h-10 rounded-md border text-sm font-display uppercase tracking-wider",
+                form.tripType === "long"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-secondary/40 text-muted-foreground",
+              )}
+            >
+              Long Trip · နယ်ဝေး
+            </button>
+          </div>
+        </div>
+
+        {form.tripType === "long" && (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Trip Start">
+              <Input
+                type="date"
+                value={form.tripStart}
+                onChange={(e) => setForm({ ...form, tripStart: e.target.value })}
+              />
+            </Field>
+            <Field label="Trip End">
+              <Input
+                type="date"
+                value={form.tripEnd}
+                onChange={(e) => setForm({ ...form, tripEnd: e.target.value })}
+              />
+            </Field>
+            <div className="col-span-2 text-xs text-muted-foreground">
+              Total trip days: <span className="text-foreground font-bold">{tripDays(form.tripStart, form.tripEnd)}</span>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Mileage Start (km)">
@@ -227,13 +322,25 @@ const Daily = () => {
           <ul className="divide-y divide-border/60">
             {recent.map((e) => {
               const profit = dailyProfit(e);
+              const isLong = e.tripType === "long";
               return (
                 <li key={e.id} className="p-4 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold">{e.date}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold">{e.date}</p>
+                      <span className={cn(
+                        "text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded font-bold",
+                        isLong ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground",
+                      )}>
+                        {isLong ? "Long" : "City"}
+                      </span>
+                    </div>
                     <p className="text-xs text-muted-foreground tabular">
                       {fmtNumber(kmDriven(e))} km · Exp {fmtMoney(totalExpense(e))} · Inc{" "}
                       {fmtMoney(e.income)}
+                      {isLong && e.tripStart && e.tripEnd && (
+                        <> · {tripDays(e.tripStart, e.tripEnd)} day{tripDays(e.tripStart, e.tripEnd) === 1 ? "" : "s"}</>
+                      )}
                     </p>
                   </div>
                   <span
@@ -254,7 +361,7 @@ const Daily = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => remove(e.id)}
+                    onClick={() => setPendingDelete(e)}
                     className="p-2 text-muted-foreground hover:text-destructive transition-smooth"
                     aria-label="Delete entry"
                   >
@@ -266,6 +373,26 @@ const Daily = () => {
           </ul>
         )}
       </section>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete daily entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Entry for {pendingDelete?.date}. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRemove}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
