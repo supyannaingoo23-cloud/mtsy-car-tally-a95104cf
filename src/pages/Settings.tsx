@@ -764,3 +764,76 @@ const HistoryCell = ({
 
 export default Settings;
 
+const FuelHistoryEditDialog = ({
+  entry,
+  onClose,
+  onSaved,
+}: {
+  entry: FuelHistoryEntry | null;
+  onClose: () => void;
+  onSaved: () => void | Promise<void>;
+}) => {
+  const [date, setDate] = useState("");
+  const [g92, setG92] = useState<number>(0);
+  const [g95, setG95] = useState<number>(0);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (entry) {
+      setDate(entry.date);
+      setG92(entry.gasoline92);
+      setG95(entry.gasoline95);
+    }
+  }, [entry]);
+
+  const submit = async () => {
+    if (!entry) return;
+    setBusy(true);
+    try {
+      await updateFuelHistory(entry.id, { date, gasoline92: g92, gasoline95: g95 });
+      toast.success("Record updated");
+      await onSaved();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!entry} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="font-display uppercase tracking-wider">
+            Edit Fuel-Price Record
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Field label="Date">
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Gasoline 92">
+              <NumberInput value={g92} onChange={setG92} placeholder="0" />
+            </Field>
+            <Field label="Gasoline 95">
+              <NumberInput value={g95} onChange={setG95} placeholder="0" />
+            </Field>
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} className="flex-1" disabled={busy}>
+            Cancel
+          </Button>
+          <Button
+            onClick={submit}
+            disabled={busy}
+            className="flex-1 bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow"
+          >
+            {busy ? "Saving…" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
