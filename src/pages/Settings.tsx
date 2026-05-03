@@ -299,6 +299,12 @@ const Settings = () => {
           {savingQuota ? "Saving…" : "Save Quota"}
         </Button>
       </section>
+
+      <section className="surface-card border border-border rounded-xl p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display uppercase tracking-wider text-sm font-bold flex items-center gap-2">
+            <Fuel className="h-4 w-4 text-primary" /> Fuel Prices (Weekly)
+          </h2>
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
             {updatedLabel}
           </span>
