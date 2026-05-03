@@ -366,6 +366,23 @@ export async function getFuelLatestAndPrevious(): Promise<{
   const list = await getFuelHistory();
   return { latest: list[0], previous: list[1] };
 }
+export async function updateFuelHistory(
+  id: string,
+  patch: { date?: string; gasoline92?: number; gasoline95?: number },
+): Promise<void> {
+  const row: any = {};
+  if (patch.date !== undefined) row.date = patch.date;
+  if (patch.gasoline92 !== undefined) row.gasoline_92 = patch.gasoline92;
+  if (patch.gasoline95 !== undefined) row.gasoline_95 = patch.gasoline95;
+  const { error } = await supabase.from("fuel_history" as any).update(row).eq("id", id);
+  if (error) throw error;
+  await pullFuelHistory();
+}
+export async function deleteFuelHistory(id: string): Promise<void> {
+  const { error } = await supabase.from("fuel_history" as any).delete().eq("id", id);
+  if (error) throw error;
+  await pullFuelHistory();
+}
 
 // ---------- Fuel Fills (35L weekly quota log) ----------
 export async function getFuelFills(): Promise<FuelFill[]> {
