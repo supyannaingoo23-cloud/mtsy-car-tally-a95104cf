@@ -197,7 +197,7 @@ const Daily = () => {
                   : "border-border bg-secondary/40 text-muted-foreground",
               )}
             >
-              City Trip · မြို့တွင်း
+              City Trip
             </button>
             <button
               type="button"
@@ -209,7 +209,7 @@ const Daily = () => {
                   : "border-border bg-secondary/40 text-muted-foreground",
               )}
             >
-              Long Trip · နယ်ဝေး
+              Long Trip
             </button>
           </div>
         </div>
