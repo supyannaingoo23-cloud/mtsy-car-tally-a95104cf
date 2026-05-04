@@ -97,10 +97,6 @@ const Settings = () => {
   // Fuel history
   const [fuelHistory, setFuelHistory] = useState<FuelHistoryEntry[]>([]);
 
-  // Region (Myanmar 14 regions/states)
-  const [region, setRegionState] = useState<string>("");
-  const [savingRegion, setSavingRegion] = useState(false);
-
   // Quota liters
   const [quota, setQuota] = useState<number>(35);
   const [savingQuota, setSavingQuota] = useState(false);
@@ -112,9 +108,7 @@ const Settings = () => {
   useEffect(() => {
     (async () => {
       setFuel(await getFuelPrices());
-      setRegionState((await getRegion()) ?? "");
       setQuota(await getQuotaLiters());
-      // Try cloud refresh first; fall back to local mirror
       try {
         setFuelHistory(await pullFuelHistory());
       } catch {
@@ -122,19 +116,6 @@ const Settings = () => {
       }
     })();
   }, []);
-
-  const saveRegion = async () => {
-    if (!region) return toast.error("Pick a region");
-    setSavingRegion(true);
-    try {
-      await setRegion(region);
-      toast.success("Region saved");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to save");
-    } finally {
-      setSavingRegion(false);
-    }
-  };
 
   const saveQuota = async () => {
     if (!quota || quota <= 0) return toast.error("Enter quota > 0");
