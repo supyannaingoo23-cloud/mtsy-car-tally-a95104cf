@@ -60,12 +60,13 @@ const QuotaCard = () => {
             Fuel Quota ({quota}L)
           </h2>
         </div>
-        {region && (
-          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-            <MapPin className="h-3 w-3" />
-            {region}
-          </span>
-        )}
+        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          <MapPin className="h-3 w-3" />
+          {gpsState === "loading" && "Locating…"}
+          {gpsState === "ok" && gpsRegion}
+          {gpsState === "error" && "Location unavailable"}
+          {gpsState === "idle" && "—"}
+        </span>
       </div>
 
       <ul className="divide-y divide-border/60">
