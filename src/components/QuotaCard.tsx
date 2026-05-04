@@ -6,11 +6,14 @@ import { computeAllRegionStatuses, QuotaStatus } from "@/lib/quota";
 import { Progress } from "@/components/ui/progress";
 import { fmtNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { detectRegion } from "@/lib/geoRegion";
 
 const QuotaCard = () => {
   const [fills, setFills] = useState<FuelFill[]>([]);
   const [region, setRegion] = useState<string | null>(null);
   const [quota, setQuota] = useState<number>(35);
+  const [gpsRegion, setGpsRegion] = useState<string | null>(null);
+  const [gpsState, setGpsState] = useState<"idle" | "loading" | "ok" | "error">("idle");
 
   const load = async () => {
     const [f, r, q] = await Promise.all([getFuelFills(), getRegion(), getQuotaLiters()]);
@@ -24,6 +27,23 @@ const QuotaCard = () => {
     const handler = () => load();
     window.addEventListener("mtsy:fuel-fills-changed", handler);
     return () => window.removeEventListener("mtsy:fuel-fills-changed", handler);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setGpsState("loading");
+    detectRegion().then((res) => {
+      if (cancelled) return;
+      if (res.status === "ok") {
+        setGpsRegion(res.region);
+        setGpsState("ok");
+      } else {
+        setGpsState("error");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const statuses: QuotaStatus[] = computeAllRegionStatuses(fills, region, new Date(), quota);
@@ -40,12 +60,13 @@ const QuotaCard = () => {
             Fuel Quota ({quota}L)
           </h2>
         </div>
-        {region && (
-          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-            <MapPin className="h-3 w-3" />
-            {region}
-          </span>
-        )}
+        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          <MapPin className="h-3 w-3" />
+          {gpsState === "loading" && "Locating…"}
+          {gpsState === "ok" && gpsRegion}
+          {gpsState === "error" && "Location unavailable"}
+          {gpsState === "idle" && "—"}
+        </span>
       </div>
 
       <ul className="divide-y divide-border/60">

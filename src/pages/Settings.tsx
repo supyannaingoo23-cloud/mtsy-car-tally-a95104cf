@@ -45,14 +45,11 @@ import {
   getFuelHistory,
   getFuelPrices,
   getQuotaLiters,
-  getRegion,
   pullFuelHistory,
   saveFuelPrices,
   setQuotaLiters,
-  setRegion,
   updateFuelHistory,
 } from "@/lib/db";
-import { MYANMAR_REGIONS } from "@/lib/regions";
 import {
   logout,
   setStoredPassword,
@@ -100,10 +97,6 @@ const Settings = () => {
   // Fuel history
   const [fuelHistory, setFuelHistory] = useState<FuelHistoryEntry[]>([]);
 
-  // Region (Myanmar 14 regions/states)
-  const [region, setRegionState] = useState<string>("");
-  const [savingRegion, setSavingRegion] = useState(false);
-
   // Quota liters
   const [quota, setQuota] = useState<number>(35);
   const [savingQuota, setSavingQuota] = useState(false);
@@ -115,9 +108,7 @@ const Settings = () => {
   useEffect(() => {
     (async () => {
       setFuel(await getFuelPrices());
-      setRegionState((await getRegion()) ?? "");
       setQuota(await getQuotaLiters());
-      // Try cloud refresh first; fall back to local mirror
       try {
         setFuelHistory(await pullFuelHistory());
       } catch {
@@ -125,19 +116,6 @@ const Settings = () => {
       }
     })();
   }, []);
-
-  const saveRegion = async () => {
-    if (!region) return toast.error("Pick a region");
-    setSavingRegion(true);
-    try {
-      await setRegion(region);
-      toast.success("Region saved");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to save");
-    } finally {
-      setSavingRegion(false);
-    }
-  };
 
   const saveQuota = async () => {
     if (!quota || quota <= 0) return toast.error("Enter quota > 0");
@@ -261,34 +239,6 @@ const Settings = () => {
 
   return (
     <div className="space-y-4">
-      <section className="surface-card border border-border rounded-xl p-5 space-y-4">
-        <h2 className="font-display uppercase tracking-wider text-sm font-bold flex items-center gap-2">
-          <Info className="h-4 w-4 text-primary" /> Region / State
-        </h2>
-        <p className="text-xs text-muted-foreground">
-          Where the car is registered (Myanmar — 14 regions and states).
-        </p>
-        <select
-          value={region}
-          onChange={(e) => setRegionState(e.target.value)}
-          className="w-full h-10 rounded-md bg-input border border-border px-3 text-sm font-medium"
-        >
-          <option value="">— Select region —</option>
-          {MYANMAR_REGIONS.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
-        <Button
-          onClick={saveRegion}
-          disabled={savingRegion || !region}
-          className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow font-display uppercase tracking-wider"
-        >
-          {savingRegion ? "Saving…" : "Save Region"}
-        </Button>
-      </section>
-
       <section className="surface-card border border-border rounded-xl p-5 space-y-4">
         <h2 className="font-display uppercase tracking-wider text-sm font-bold flex items-center gap-2">
           <Fuel className="h-4 w-4 text-primary" /> Fuel Quota (Liters)
