@@ -45,14 +45,11 @@ import {
   getFuelHistory,
   getFuelPrices,
   getQuotaLiters,
-  getRegion,
   pullFuelHistory,
   saveFuelPrices,
   setQuotaLiters,
-  setRegion,
   updateFuelHistory,
 } from "@/lib/db";
-import { MYANMAR_REGIONS } from "@/lib/regions";
 import {
   logout,
   setStoredPassword,
