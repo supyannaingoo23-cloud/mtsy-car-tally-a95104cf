@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.0445d71ddea441e18638013f81d6fa0e',
+  appId: 'com.mtsy.cartally',
   appName: 'MTSY Car Rental',
   webDir: 'dist',
   server: {
@@ -13,6 +13,15 @@ const config: CapacitorConfig = {
   },
   ios: {
     backgroundColor: '#121417',
+  },
+  plugins: {
+    LocalNotifications: {
+      smallIcon: 'ic_stat_icon_config_sample',
+      iconColor: '#3B82F6',
+    },
+    BackgroundGeolocation: {
+      // configured at runtime
+    },
   },
 };
 
