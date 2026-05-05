@@ -113,8 +113,10 @@ let regionWatcherId: string | null = null;
 export async function startRegionWatcher(): Promise<void> {
   if (!isNative()) return;
   try {
-    const mod = await import("@capacitor-community/background-geolocation");
-    const BackgroundGeolocation = (mod as any).BackgroundGeolocation ?? mod.default;
+    const mod = await import(
+      /* @vite-ignore */ "@capacitor-community/background-geolocation"
+    );
+    const BackgroundGeolocation = (mod as any).BackgroundGeolocation ?? (mod as any).default;
     if (regionWatcherId) {
       try {
         await BackgroundGeolocation.removeWatcher({ id: regionWatcherId });
