@@ -22,9 +22,8 @@ export async function requestAllPermissions(): Promise<void> {
   }
   try {
     // Dynamically import so web build doesn't crash if plugin missing.
-    const { BackgroundGeolocation } = await import(
-      "@capacitor-community/background-geolocation"
-    );
+    const mod = await import("@capacitor-community/background-geolocation");
+    const BackgroundGeolocation = (mod as any).BackgroundGeolocation ?? mod.default;
     // Adding a watcher triggers the OS permission prompt (incl. "Always").
     await BackgroundGeolocation.addWatcher(
       {
@@ -112,9 +111,8 @@ let regionWatcherId: string | null = null;
 export async function startRegionWatcher(): Promise<void> {
   if (!isNative()) return;
   try {
-    const { BackgroundGeolocation } = await import(
-      "@capacitor-community/background-geolocation"
-    );
+    const mod = await import("@capacitor-community/background-geolocation");
+    const BackgroundGeolocation = (mod as any).BackgroundGeolocation ?? mod.default;
     if (regionWatcherId) {
       try {
         await BackgroundGeolocation.removeWatcher({ id: regionWatcherId });
