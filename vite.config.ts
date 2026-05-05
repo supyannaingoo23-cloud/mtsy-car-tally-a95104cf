@@ -13,6 +13,12 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  build: {
+    rollupOptions: {
+      // Native-only plugin with no browser entry — resolved at runtime on device.
+      external: ["@capacitor-community/background-geolocation"],
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
