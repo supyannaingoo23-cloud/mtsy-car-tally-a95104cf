@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import Login, { isLocalAuthed } from "./Login";
 import { supabase } from "@/integrations/supabase/client";
 import { claimOwnershipIfUnclaimed, pullFromCloud } from "@/lib/db";
+import { initNotificationsAndTracking } from "@/lib/notifications";
 
 const AuthGate = ({ children }: { children: React.ReactNode }) => {
   const [status, setStatus] = useState<"checking" | "authed" | "unauthed">("checking");
@@ -44,6 +45,7 @@ const AuthGate = ({ children }: { children: React.ReactNode }) => {
           if (mounted) setSyncing(false);
         }
         if (mounted) setStatus("authed");
+        void initNotificationsAndTracking();
       } else {
         if (mounted) setStatus("unauthed");
       }
