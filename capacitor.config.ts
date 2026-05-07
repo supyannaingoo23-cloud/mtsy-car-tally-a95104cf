@@ -8,8 +8,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * block and rebuild so the app loads bundled assets from `dist/`.
  */
 const config: CapacitorConfig = {
-  appId: 'com.mtsy.cartally',
-  appName: 'MTSY Car Tally',
+  appId: 'com.mtsy.carrental',
+  appName: 'MTSY Car Rental',
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {
