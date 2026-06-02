@@ -62,9 +62,20 @@ export function computeQuotaStatus(
   region = "",
   quotaTotal = QUOTA_LITERS,
 ): QuotaStatus {
+  // Defensive: drop malformed records so a bad row can never crash the dashboard.
+  const safe = (Array.isArray(fills) ? fills : []).filter(
+    (f) =>
+      !!f &&
+      typeof f.date === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(f.date) &&
+      Number.isFinite(Number(f.liters)),
+  );
+  const safeQuota =
+    Number.isFinite(quotaTotal) && quotaTotal > 0 ? quotaTotal : QUOTA_LITERS;
+
   const scoped = region
-    ? fills.filter((f) => (f.region ?? "") === region)
-    : fills;
+    ? safe.filter((f) => (f.region ?? "") === region)
+    : safe;
   const sorted = [...scoped].sort((a, b) => b.date.localeCompare(a.date));
   const last = sorted[0];
   const evenToday = isEvenDay(today);
@@ -74,8 +85,8 @@ export function computeQuotaStatus(
       region,
       lastFillDate: null,
       lastFillLiters: 0,
-      quotaTotal,
-      remainingLiters: quotaTotal,
+      quotaTotal: safeQuota,
+      remainingLiters: safeQuota,
       usedPercent: 0,
       daysSinceLastFill: 0,
       daysUntilEligible: evenToday ? 0 : 1,
@@ -93,8 +104,12 @@ export function computeQuotaStatus(
   const days = daysBetween(lastDate, today);
   const sevenDaysOk = days >= QUOTA_DAYS;
   const eligibleDate = computeNextEligibleDate(lastDate);
-  const remaining = Math.max(0, quotaTotal - (last.liters || 0));
-  const usedPercent = Math.min(100, Math.round(((last.liters || 0) / quotaTotal) * 100));
+  const lastLiters = Math.max(0, Number(last.liters) || 0);
+  const remaining = Math.max(0, safeQuota - lastLiters);
+  const usedPercent = Math.min(
+    100,
+    Math.max(0, Math.round((lastLiters / safeQuota) * 100)),
+  );
 
   if (!sevenDaysOk) {
     const remainingDays = QUOTA_DAYS - days;
