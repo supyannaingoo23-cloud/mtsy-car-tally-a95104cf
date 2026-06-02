@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, ArrowRight, Baby, HandCoins, PiggyBank, TrendingDown, TrendingUp, Wrench } from "lucide-react";
 import LiveClock from "@/components/LiveClock";
@@ -6,7 +6,9 @@ import StatCard from "@/components/StatCard";
 import FuelPricesCard from "@/components/FuelPricesCard";
 import FridayFuelReminder from "@/components/FridayFuelReminder";
 import QuotaCard from "@/components/QuotaCard";
+import MonthFilter from "@/components/MonthFilter";
 import { Button } from "@/components/ui/button";
+import { useMonthFilter } from "@/contexts/MonthFilterContext";
 import {
   DailyEntry,
   MaintenancePart,
@@ -31,25 +33,58 @@ import { fmtNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
-  const [entries, setEntries] = useState<DailyEntry[]>([]);
+  const { ym } = useMonthFilter();
   const [allEntries, setAllEntries] = useState<DailyEntry[]>([]);
   const [monthly, setMonthly] = useState<MonthlyInputs | null>(null);
   const [monthlyMap, setMonthlyMap] = useState<Record<string, MonthlyInputs>>({});
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [parts, setParts] = useState<MaintenancePart[]>([]);
 
+  // Load full datasets once (cheap, mirrored from IndexedDB).
   useEffect(() => {
     (async () => {
-      const all = await getDailyEntries();
-      const ym = ymKey(new Date());
-      setAllEntries(all);
-      setEntries(all.filter((e) => e.date.startsWith(ym)));
-      setMonthly(await getMonthly(ym));
-      setMonthlyMap(await getMonthlyMap());
-      setWithdrawals(await getWithdrawals());
-      setParts(await getParts());
+      try {
+        const [all, map, wd, pts] = await Promise.all([
+          getDailyEntries(),
+          getMonthlyMap(),
+          getWithdrawals(),
+          getParts(),
+        ]);
+        setAllEntries(all);
+        setMonthlyMap(map);
+        setWithdrawals(wd);
+        setParts(pts);
+      } catch {
+        // Swallow load errors — UI shows safe zeros until data arrives.
+      }
     })();
   }, []);
+
+  // Re-fetch the selected month's manual inputs whenever the filter changes.
+  useEffect(() => {
+    (async () => {
+      try {
+        setMonthly(await getMonthly(ym));
+      } catch {
+        setMonthly(null);
+      }
+    })();
+  }, [ym]);
+
+  // Entries filtered by the selected month for this dashboard.
+  const entries = useMemo(
+    () => allEntries.filter((e) => e?.date?.startsWith(ym)),
+    [allEntries, ym],
+  );
+
+  // Months that exist in saved data — feeds the MonthFilter dropdown.
+  const dataMonths = useMemo(
+    () => [
+      ...allEntries.map((e) => e.date),
+      ...Object.keys(monthlyMap),
+    ],
+    [allEntries, monthlyMap],
+  );
 
   const finance = monthly
     ? computeFinance(entries, monthly)
@@ -80,6 +115,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-4">
       <LiveClock />
+      <MonthFilter extraMonths={dataMonths} />
       <FridayFuelReminder />
 
       <section className="grid grid-cols-2 gap-3">
@@ -87,7 +123,7 @@ const Dashboard = () => {
           label="Net Profit (This Month)"
           value={fmtMoney(finance.netProfit)}
           tone="primary"
-          hint={ymKey(new Date())}
+          hint={ym}
           icon={<TrendingUp className="h-4 w-4 text-primary" />}
         />
         <StatCard

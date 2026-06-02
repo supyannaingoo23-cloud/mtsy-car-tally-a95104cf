@@ -14,19 +14,14 @@ import {
   getWithdrawals,
   saveMonthly,
 } from "@/lib/db";
-import { computeFinance, fmtMoney, sumWithdrawals, ymKey, yKey } from "@/lib/finance";
+import { computeFinance, fmtMoney, sumWithdrawals, yKey } from "@/lib/finance";
 import StatCard from "@/components/StatCard";
-
-const ymOptions = (entries: DailyEntry[]) => {
-  const set = new Set<string>();
-  set.add(ymKey(new Date()));
-  entries.forEach((e) => set.add(e.date.slice(0, 7)));
-  return Array.from(set).sort().reverse();
-};
+import MonthFilter from "@/components/MonthFilter";
+import { useMonthFilter } from "@/contexts/MonthFilterContext";
 
 const Finance = () => {
+  const { ym } = useMonthFilter();
   const [entries, setEntries] = useState<DailyEntry[]>([]);
-  const [ym, setYm] = useState<string>(ymKey(new Date()));
   const [inputs, setInputs] = useState<MonthlyInputs | null>(null);
   const [monthlyMap, setMonthlyMap] = useState<Record<string, MonthlyInputs>>({});
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
@@ -111,20 +106,13 @@ const Finance = () => {
         </TabsList>
 
         <TabsContent value="month" className="space-y-4 mt-4">
-          <div className="surface-card border border-border rounded-xl p-4 space-y-3">
-            <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
-              Month
-            </Label>
-            <select
-              value={ym}
-              onChange={(e) => setYm(e.target.value)}
-              className="w-full h-10 rounded-md bg-input border border-border px-3 text-sm font-medium"
-            >
-              {ymOptions(entries).map((k) => (
-                <option key={k} value={k}>{k}</option>
-              ))}
-            </select>
-          </div>
+          <MonthFilter
+            extraMonths={[
+              ...entries.map((e) => e.date),
+              ...Object.keys(monthlyMap),
+            ]}
+          />
+
 
           {inputs && finance && (
             <>

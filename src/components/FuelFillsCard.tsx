@@ -1,5 +1,6 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Fuel, Plus, Trash2 } from "lucide-react";
+import { useMonthFilter } from "@/contexts/MonthFilterContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +37,7 @@ import { fmtNumber } from "@/lib/format";
 const today = () => new Date().toISOString().slice(0, 10);
 
 const FuelFillsCard = () => {
+  const { ym } = useMonthFilter();
   const [fills, setFills] = useState<FuelFill[]>([]);
   const [quota, setQuota] = useState<number>(35);
   const [defaultRegion, setDefaultRegion] = useState<string>("");
@@ -110,6 +112,12 @@ const FuelFillsCard = () => {
     }
   };
 
+  // Restrict the visible fills to the globally-selected month.
+  const monthFills = useMemo(
+    () => fills.filter((f) => f?.date?.startsWith(ym)),
+    [fills, ym],
+  );
+
   return (
     <section className="surface-card border border-border rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
@@ -118,6 +126,9 @@ const FuelFillsCard = () => {
           <h2 className="font-display font-bold tracking-wider uppercase text-sm">
             Fuel Fills
           </h2>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            · {ym}
+          </span>
         </div>
         <Button
           size="sm"
@@ -128,11 +139,15 @@ const FuelFillsCard = () => {
         </Button>
       </div>
 
-      {fills.length === 0 ? (
-        <p className="p-4 text-sm text-muted-foreground">No fills logged yet.</p>
+      {monthFills.length === 0 ? (
+        <p className="p-4 text-sm text-muted-foreground">
+          {fills.length === 0
+            ? "No fills logged yet."
+            : "No fills in this month."}
+        </p>
       ) : (
         <ul className="divide-y divide-border/60">
-          {fills.slice(0, 20).map((f) => (
+          {monthFills.slice(0, 20).map((f) => (
             <li key={f.id} className="p-3 flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold">{f.date}</p>
@@ -164,6 +179,7 @@ const FuelFillsCard = () => {
           ))}
         </ul>
       )}
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm">
