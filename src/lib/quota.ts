@@ -172,11 +172,16 @@ export function computeAllRegionStatuses(
   today = new Date(),
   quotaTotal = QUOTA_LITERS,
 ): QuotaStatus[] {
+  const safeFills = Array.isArray(fills) ? fills : [];
   const regions = new Set<string>();
-  fills.forEach((f) => f.region && regions.add(f.region));
+  safeFills.forEach((f) => {
+    const r = f?.region?.trim();
+    if (r) regions.add(r);
+  });
   if (selectedRegion) regions.add(selectedRegion);
-  if (regions.size === 0) return [computeQuotaStatus(fills, today, "", quotaTotal)];
+  if (regions.size === 0)
+    return [computeQuotaStatus(safeFills, today, "", quotaTotal)];
   return Array.from(regions)
-    .sort()
-    .map((r) => computeQuotaStatus(fills, today, r, quotaTotal));
+    .sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }))
+    .map((r) => computeQuotaStatus(safeFills, today, r, quotaTotal));
 }
