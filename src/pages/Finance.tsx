@@ -106,20 +106,13 @@ const Finance = () => {
         </TabsList>
 
         <TabsContent value="month" className="space-y-4 mt-4">
-          <div className="surface-card border border-border rounded-xl p-4 space-y-3">
-            <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
-              Month
-            </Label>
-            <select
-              value={ym}
-              onChange={(e) => setYm(e.target.value)}
-              className="w-full h-10 rounded-md bg-input border border-border px-3 text-sm font-medium"
-            >
-              {ymOptions(entries).map((k) => (
-                <option key={k} value={k}>{k}</option>
-              ))}
-            </select>
-          </div>
+          <MonthFilter
+            extraMonths={[
+              ...entries.map((e) => e.date),
+              ...Object.keys(monthlyMap),
+            ]}
+          />
+
 
           {inputs && finance && (
             <>
