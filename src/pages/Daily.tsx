@@ -68,9 +68,10 @@ const tripDays = (start?: string | null, end?: string | null) => {
 };
 
 const Daily = () => {
+  const { ym } = useMonthFilter();
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [form, setForm] = useState<FormState>(empty(today(), 0));
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<FuelOrNull>(null);
   const [pendingDelete, setPendingDelete] = useState<DailyEntry | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
