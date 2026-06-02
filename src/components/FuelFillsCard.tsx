@@ -37,6 +37,7 @@ import { fmtNumber } from "@/lib/format";
 const today = () => new Date().toISOString().slice(0, 10);
 
 const FuelFillsCard = () => {
+  const { ym } = useMonthFilter();
   const [fills, setFills] = useState<FuelFill[]>([]);
   const [quota, setQuota] = useState<number>(35);
   const [defaultRegion, setDefaultRegion] = useState<string>("");
