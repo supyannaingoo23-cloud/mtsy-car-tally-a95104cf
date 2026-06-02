@@ -20,8 +20,8 @@ import MonthFilter from "@/components/MonthFilter";
 import { useMonthFilter } from "@/contexts/MonthFilterContext";
 
 const Finance = () => {
+  const { ym } = useMonthFilter();
   const [entries, setEntries] = useState<DailyEntry[]>([]);
-  const [ym, setYm] = useState<string>(ymKey(new Date()));
   const [inputs, setInputs] = useState<MonthlyInputs | null>(null);
   const [monthlyMap, setMonthlyMap] = useState<Record<string, MonthlyInputs>>({});
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
