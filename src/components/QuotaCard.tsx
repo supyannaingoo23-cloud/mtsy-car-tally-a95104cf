@@ -16,10 +16,19 @@ const QuotaCard = () => {
   const [gpsState, setGpsState] = useState<"idle" | "loading" | "ok" | "error">("idle");
 
   const load = async () => {
-    const [f, r, q] = await Promise.all([getFuelFills(), getRegion(), getQuotaLiters()]);
-    setFills(f);
-    setRegion(r);
-    setQuota(q);
+    try {
+      const [f, r, q] = await Promise.all([
+        getFuelFills(),
+        getRegion(),
+        getQuotaLiters(),
+      ]);
+      // Functional updates keep us safe against overlapping reloads.
+      setFills(() => (Array.isArray(f) ? f : []));
+      setRegion(() => r ?? null);
+      setQuota(() => (Number.isFinite(q) && q > 0 ? q : 35));
+    } catch (err) {
+      console.warn("[QuotaCard] load failed", err);
+    }
   };
 
   useEffect(() => {
@@ -32,15 +41,21 @@ const QuotaCard = () => {
   useEffect(() => {
     let cancelled = false;
     setGpsState("loading");
-    detectRegion().then((res) => {
-      if (cancelled) return;
-      if (res.status === "ok") {
-        setGpsRegion(res.region);
-        setGpsState("ok");
-      } else {
-        setGpsState("error");
-      }
-    });
+    // detectRegion never throws today, but wrap defensively for future-proofing.
+    Promise.resolve()
+      .then(() => detectRegion())
+      .then((res) => {
+        if (cancelled) return;
+        if (res?.status === "ok") {
+          setGpsRegion(res.region);
+          setGpsState("ok");
+        } else {
+          setGpsState("error");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setGpsState("error");
+      });
     return () => {
       cancelled = true;
     };
