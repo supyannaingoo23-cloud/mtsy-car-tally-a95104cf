@@ -116,8 +116,8 @@ export function computeQuotaStatus(
     return {
       region,
       lastFillDate: last.date,
-      lastFillLiters: last.liters || 0,
-      quotaTotal,
+      lastFillLiters: lastLiters,
+      quotaTotal: safeQuota,
       remainingLiters: remaining,
       usedPercent,
       daysSinceLastFill: days,
@@ -134,9 +134,9 @@ export function computeQuotaStatus(
     return {
       region,
       lastFillDate: last.date,
-      lastFillLiters: last.liters || 0,
-      quotaTotal,
-      remainingLiters: quotaTotal, // ready for full refill
+      lastFillLiters: lastLiters,
+      quotaTotal: safeQuota,
+      remainingLiters: safeQuota, // 7-day wait elapsed on an even day → ready for a full refill
       usedPercent: 0,
       daysSinceLastFill: days,
       daysUntilEligible: 0,
@@ -151,8 +151,8 @@ export function computeQuotaStatus(
   return {
     region,
     lastFillDate: last.date,
-    lastFillLiters: last.liters || 0,
-    quotaTotal,
+    lastFillLiters: lastLiters,
+    quotaTotal: safeQuota,
     remainingLiters: remaining,
     usedPercent,
     daysSinceLastFill: days,
