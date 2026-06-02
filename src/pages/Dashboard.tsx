@@ -115,6 +115,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-4">
       <LiveClock />
+      <MonthFilter extraMonths={dataMonths} />
       <FridayFuelReminder />
 
       <section className="grid grid-cols-2 gap-3">
@@ -122,7 +123,7 @@ const Dashboard = () => {
           label="Net Profit (This Month)"
           value={fmtMoney(finance.netProfit)}
           tone="primary"
-          hint={ymKey(new Date())}
+          hint={ym}
           icon={<TrendingUp className="h-4 w-4 text-primary" />}
         />
         <StatCard
