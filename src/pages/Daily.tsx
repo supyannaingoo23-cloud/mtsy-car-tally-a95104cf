@@ -165,12 +165,18 @@ const Daily = () => {
     }
   };
 
-  const recent = [...entries].reverse().slice(0, 30);
+  // Show only entries for the selected month; newest first; cap at 30 rows.
+  const recent = [...entries]
+    .filter((e) => e?.date?.startsWith(ym))
+    .reverse()
+    .slice(0, 30);
 
   return (
     <div className="space-y-5">
+      <MonthFilter extraMonths={entries.map((e) => e.date)} />
       <FuelPricesCard compact title="Fuel Prices (Today)" />
       <FuelFillsCard />
+
 
       <form ref={formRef} onSubmit={submit} className="surface-card border border-border rounded-xl p-4 space-y-4">
         <h2 className="font-display font-bold uppercase tracking-wider text-sm text-primary">
