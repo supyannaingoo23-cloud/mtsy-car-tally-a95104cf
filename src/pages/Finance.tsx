@@ -14,15 +14,10 @@ import {
   getWithdrawals,
   saveMonthly,
 } from "@/lib/db";
-import { computeFinance, fmtMoney, sumWithdrawals, ymKey, yKey } from "@/lib/finance";
+import { computeFinance, fmtMoney, sumWithdrawals, yKey } from "@/lib/finance";
 import StatCard from "@/components/StatCard";
-
-const ymOptions = (entries: DailyEntry[]) => {
-  const set = new Set<string>();
-  set.add(ymKey(new Date()));
-  entries.forEach((e) => set.add(e.date.slice(0, 7)));
-  return Array.from(set).sort().reverse();
-};
+import MonthFilter from "@/components/MonthFilter";
+import { useMonthFilter } from "@/contexts/MonthFilterContext";
 
 const Finance = () => {
   const [entries, setEntries] = useState<DailyEntry[]>([]);
