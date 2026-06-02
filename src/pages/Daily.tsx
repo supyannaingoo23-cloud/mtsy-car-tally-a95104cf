@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import NumberInput from "@/components/NumberInput";
 import FuelPricesCard from "@/components/FuelPricesCard";
 import FuelFillsCard from "@/components/FuelFillsCard";
+import MonthFilter from "@/components/MonthFilter";
+import { useMonthFilter } from "@/contexts/MonthFilterContext";
 import {
   AlertDialog,
   AlertDialogAction,
