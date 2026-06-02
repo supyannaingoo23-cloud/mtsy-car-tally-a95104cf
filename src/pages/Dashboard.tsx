@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, ArrowRight, Baby, HandCoins, PiggyBank, TrendingDown, TrendingUp, Wrench } from "lucide-react";
 import LiveClock from "@/components/LiveClock";
@@ -6,7 +6,9 @@ import StatCard from "@/components/StatCard";
 import FuelPricesCard from "@/components/FuelPricesCard";
 import FridayFuelReminder from "@/components/FridayFuelReminder";
 import QuotaCard from "@/components/QuotaCard";
+import MonthFilter from "@/components/MonthFilter";
 import { Button } from "@/components/ui/button";
+import { useMonthFilter } from "@/contexts/MonthFilterContext";
 import {
   DailyEntry,
   MaintenancePart,
