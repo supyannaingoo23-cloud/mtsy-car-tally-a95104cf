@@ -219,6 +219,13 @@ const FuelFillsCard = () => {
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+                Fuel Cost (Ks)
+              </Label>
+              {/* Manual cost — does NOT affect monthly expenses or profit. */}
+              <NumberInput value={cost} onChange={setCost} placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
                 Date
               </Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
