@@ -149,6 +149,17 @@ const FuelFillsCard = () => {
     [fills, ym],
   );
 
+  // Octane-92 price effective on the form's selected date (historical lookup).
+  const effectivePrice92 = useMemo(
+    () => price92On(date, history, currentPrice92),
+    [date, history, currentPrice92],
+  );
+  // Auto-calculated fuel cost = liters × effective 92 price. Frozen on save.
+  const computedCost = useMemo(
+    () => (Number(liters) || 0) * (Number(effectivePrice92) || 0),
+    [liters, effectivePrice92],
+  );
+
   return (
     <section className="surface-card border border-border rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
