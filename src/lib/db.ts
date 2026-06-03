@@ -64,6 +64,8 @@ export type FuelFill = {
   id: string;
   date: string;
   liters: number;
+  /** Total kyat paid for this fill. Does NOT affect expenses/profit. */
+  cost: number;
   note: string;
   region?: string;
 };
