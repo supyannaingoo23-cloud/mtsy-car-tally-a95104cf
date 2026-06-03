@@ -117,7 +117,7 @@ const FuelFillsCard = () => {
         id: editing?.id ?? `fill-${Date.now()}`,
         date,
         liters,
-        cost: Number.isFinite(cost) ? Math.max(0, cost) : 0,
+        cost: Math.max(0, Number(computedCost) || 0),
         note: note.trim(),
         region,
       });
