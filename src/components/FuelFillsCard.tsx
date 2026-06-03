@@ -257,10 +257,16 @@ const FuelFillsCard = () => {
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
-                Fuel Cost (Ks)
+                Fuel Cost (Ks) · Auto
               </Label>
-              {/* Manual cost — does NOT affect monthly expenses or profit. */}
-              <NumberInput value={cost} onChange={setCost} placeholder="0" />
+              {/* Auto-calculated: liters × Octane 92 price effective on this date.
+                  Stored historically — does NOT affect monthly expenses or profit. */}
+              <div className="h-10 rounded-md bg-muted/40 border border-border px-3 text-sm font-semibold flex items-center justify-between">
+                <span className="tabular text-primary">{fmtMoney(computedCost)}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  @ {fmtNumber(effectivePrice92)} Ks/L (92)
+                </span>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
