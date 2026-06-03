@@ -25,36 +25,65 @@ import {
 import { toast } from "sonner";
 import {
   FuelFill,
+  FuelHistoryEntry,
   deleteFuelFill,
   getFuelFills,
+  getFuelHistory,
+  getFuelPrices,
   getQuotaLiters,
   getRegion,
   saveFuelFill,
 } from "@/lib/db";
 import { MYANMAR_REGIONS } from "@/lib/regions";
 import { fmtNumber } from "@/lib/format";
+import { fmtMoney } from "@/lib/finance";
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+/**
+ * Octane-92 price effective on a given date.
+ * Picks the most recent fuel_history row with date <= target, else falls back
+ * to the current snapshot price. Returns 0 if neither is available.
+ */
+const price92On = (
+  dateStr: string,
+  history: FuelHistoryEntry[],
+  currentPrice92: number,
+): number => {
+  const sorted = [...history].sort((a, b) => b.date.localeCompare(a.date));
+  const match = sorted.find((h) => h.date <= dateStr);
+  if (match && Number(match.gasoline92) > 0) return Number(match.gasoline92);
+  return Number(currentPrice92) || 0;
+};
 
 const FuelFillsCard = () => {
   const { ym } = useMonthFilter();
   const [fills, setFills] = useState<FuelFill[]>([]);
   const [quota, setQuota] = useState<number>(35);
   const [defaultRegion, setDefaultRegion] = useState<string>("");
+  const [history, setHistory] = useState<FuelHistoryEntry[]>([]);
+  const [currentPrice92, setCurrentPrice92] = useState<number>(0);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<FuelFill | null>(null);
   const [date, setDate] = useState(today());
   const [region, setRegion] = useState<string>("");
   const [liters, setLiters] = useState<number>(35);
-  const [cost, setCost] = useState<number>(0);
   const [note, setNote] = useState("");
   const [pendingDelete, setPendingDelete] = useState<FuelFill | null>(null);
 
   const load = async () => {
-    const [f, q, r] = await Promise.all([getFuelFills(), getQuotaLiters(), getRegion()]);
+    const [f, q, r, h, p] = await Promise.all([
+      getFuelFills(),
+      getQuotaLiters(),
+      getRegion(),
+      getFuelHistory(),
+      getFuelPrices(),
+    ]);
     setFills(f);
     setQuota(q);
     setDefaultRegion(r ?? "");
+    setHistory(h);
+    setCurrentPrice92(Number(p?.price92) || 0);
   };
 
   useEffect(() => {
@@ -66,7 +95,6 @@ const FuelFillsCard = () => {
     setDate(today());
     setRegion(defaultRegion || "");
     setLiters(quota);
-    setCost(0);
     setNote("");
     setOpen(true);
   };
@@ -76,7 +104,6 @@ const FuelFillsCard = () => {
     setDate(f.date);
     setRegion(f.region ?? "");
     setLiters(f.liters);
-    setCost(f.cost ?? 0);
     setNote(f.note);
     setOpen(true);
   };
@@ -90,7 +117,7 @@ const FuelFillsCard = () => {
         id: editing?.id ?? `fill-${Date.now()}`,
         date,
         liters,
-        cost: Number.isFinite(cost) ? Math.max(0, cost) : 0,
+        cost: Math.max(0, Number(computedCost) || 0),
         note: note.trim(),
         region,
       });
@@ -120,6 +147,17 @@ const FuelFillsCard = () => {
   const monthFills = useMemo(
     () => fills.filter((f) => f?.date?.startsWith(ym)),
     [fills, ym],
+  );
+
+  // Octane-92 price effective on the form's selected date (historical lookup).
+  const effectivePrice92 = useMemo(
+    () => price92On(date, history, currentPrice92),
+    [date, history, currentPrice92],
+  );
+  // Auto-calculated fuel cost = liters × effective 92 price. Frozen on save.
+  const computedCost = useMemo(
+    () => (Number(liters) || 0) * (Number(effectivePrice92) || 0),
+    [liters, effectivePrice92],
   );
 
   return (
@@ -219,10 +257,16 @@ const FuelFillsCard = () => {
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
-                Fuel Cost (Ks)
+                Fuel Cost (Ks) · Auto
               </Label>
-              {/* Manual cost — does NOT affect monthly expenses or profit. */}
-              <NumberInput value={cost} onChange={setCost} placeholder="0" />
+              {/* Auto-calculated: liters × Octane 92 price effective on this date.
+                  Stored historically — does NOT affect monthly expenses or profit. */}
+              <div className="h-10 rounded-md bg-muted/40 border border-border px-3 text-sm font-semibold flex items-center justify-between">
+                <span className="tabular text-primary">{fmtMoney(computedCost)}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  @ {fmtNumber(effectivePrice92)} Ks/L (92)
+                </span>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
