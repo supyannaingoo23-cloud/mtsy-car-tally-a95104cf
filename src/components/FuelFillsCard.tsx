@@ -25,16 +25,36 @@ import {
 import { toast } from "sonner";
 import {
   FuelFill,
+  FuelHistoryEntry,
   deleteFuelFill,
   getFuelFills,
+  getFuelHistory,
+  getFuelPrices,
   getQuotaLiters,
   getRegion,
   saveFuelFill,
 } from "@/lib/db";
 import { MYANMAR_REGIONS } from "@/lib/regions";
 import { fmtNumber } from "@/lib/format";
+import { fmtMoney } from "@/lib/finance";
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+/**
+ * Octane-92 price effective on a given date.
+ * Picks the most recent fuel_history row with date <= target, else falls back
+ * to the current snapshot price. Returns 0 if neither is available.
+ */
+const price92On = (
+  dateStr: string,
+  history: FuelHistoryEntry[],
+  currentPrice92: number,
+): number => {
+  const sorted = [...history].sort((a, b) => b.date.localeCompare(a.date));
+  const match = sorted.find((h) => h.date <= dateStr);
+  if (match && Number(match.gasoline92) > 0) return Number(match.gasoline92);
+  return Number(currentPrice92) || 0;
+};
 
 const FuelFillsCard = () => {
   const { ym } = useMonthFilter();
