@@ -52,20 +52,24 @@ const MonthlyFuelCard = () => {
           Monthly Fuel Consumption · {ym}
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-3 mt-3">
+      <div className="grid grid-cols-3 gap-3 mt-3">
         <div>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Liters</p>
-          <p className="font-display text-2xl font-bold tabular text-primary">
-            {fmtNumber(liters)} <span className="text-sm text-muted-foreground">L</span>
+          <p className="font-display text-xl font-bold tabular text-primary">
+            {fmtNumber(liters)}<span className="text-xs text-muted-foreground"> L</span>
           </p>
         </div>
         <div>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Fuel Cost</p>
-          <p className="font-display text-2xl font-bold tabular text-primary">{fmtMoney(cost)}</p>
+          <p className="font-display text-xl font-bold tabular text-primary">{fmtMoney(cost)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Refuels</p>
+          <p className="font-display text-xl font-bold tabular text-primary">{count}</p>
         </div>
       </div>
       <p className="text-[10px] text-muted-foreground mt-2">
-        {count} {count === 1 ? "fill" : "fills"} this month · Informational only
+        Informational only · excluded from expenses & profit
       </p>
     </section>
   );
