@@ -88,6 +88,7 @@ export type Database = {
       }
       fuel_fills: {
         Row: {
+          cost: number
           created_at: string
           date: string
           id: string
@@ -98,6 +99,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cost?: number
           created_at?: string
           date: string
           id: string
@@ -108,6 +110,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cost?: number
           created_at?: string
           date?: string
           id?: string

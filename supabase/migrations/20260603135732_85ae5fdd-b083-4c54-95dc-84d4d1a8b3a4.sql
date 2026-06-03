@@ -1,0 +1,1 @@
+ALTER TABLE public.fuel_fills ADD COLUMN IF NOT EXISTS cost numeric NOT NULL DEFAULT 0;
