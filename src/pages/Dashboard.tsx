@@ -6,6 +6,7 @@ import StatCard from "@/components/StatCard";
 import FuelPricesCard from "@/components/FuelPricesCard";
 import FridayFuelReminder from "@/components/FridayFuelReminder";
 import QuotaCard from "@/components/QuotaCard";
+import MonthlyFuelCard from "@/components/MonthlyFuelCard";
 import MonthFilter from "@/components/MonthFilter";
 import { Button } from "@/components/ui/button";
 import { useMonthFilter } from "@/contexts/MonthFilterContext";
