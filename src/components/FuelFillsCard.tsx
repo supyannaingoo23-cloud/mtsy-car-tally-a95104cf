@@ -95,7 +95,6 @@ const FuelFillsCard = () => {
     setDate(today());
     setRegion(defaultRegion || "");
     setLiters(quota);
-    setCost(0);
     setNote("");
     setOpen(true);
   };
@@ -105,7 +104,6 @@ const FuelFillsCard = () => {
     setDate(f.date);
     setRegion(f.region ?? "");
     setLiters(f.liters);
-    setCost(f.cost ?? 0);
     setNote(f.note);
     setOpen(true);
   };
