@@ -61,20 +61,28 @@ const FuelFillsCard = () => {
   const [fills, setFills] = useState<FuelFill[]>([]);
   const [quota, setQuota] = useState<number>(35);
   const [defaultRegion, setDefaultRegion] = useState<string>("");
+  const [history, setHistory] = useState<FuelHistoryEntry[]>([]);
+  const [currentPrice92, setCurrentPrice92] = useState<number>(0);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<FuelFill | null>(null);
   const [date, setDate] = useState(today());
   const [region, setRegion] = useState<string>("");
   const [liters, setLiters] = useState<number>(35);
-  const [cost, setCost] = useState<number>(0);
-  const [note, setNote] = useState("");
   const [pendingDelete, setPendingDelete] = useState<FuelFill | null>(null);
 
   const load = async () => {
-    const [f, q, r] = await Promise.all([getFuelFills(), getQuotaLiters(), getRegion()]);
+    const [f, q, r, h, p] = await Promise.all([
+      getFuelFills(),
+      getQuotaLiters(),
+      getRegion(),
+      getFuelHistory(),
+      getFuelPrices(),
+    ]);
     setFills(f);
     setQuota(q);
     setDefaultRegion(r ?? "");
+    setHistory(h);
+    setCurrentPrice92(Number(p?.price92) || 0);
   };
 
   useEffect(() => {
