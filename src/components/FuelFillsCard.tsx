@@ -68,7 +68,7 @@ const FuelFillsCard = () => {
   const [date, setDate] = useState(today());
   const [region, setRegion] = useState<string>("");
   const [liters, setLiters] = useState<number>(35);
-  const [pendingDelete, setPendingDelete] = useState<FuelFill | null>(null);
+  const [note, setNote] = useState("");
 
   const load = async () => {
     const [f, q, r, h, p] = await Promise.all([
