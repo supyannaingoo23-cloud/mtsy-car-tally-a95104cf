@@ -46,6 +46,7 @@ const FuelFillsCard = () => {
   const [date, setDate] = useState(today());
   const [region, setRegion] = useState<string>("");
   const [liters, setLiters] = useState<number>(35);
+  const [cost, setCost] = useState<number>(0);
   const [note, setNote] = useState("");
   const [pendingDelete, setPendingDelete] = useState<FuelFill | null>(null);
 
@@ -65,6 +66,7 @@ const FuelFillsCard = () => {
     setDate(today());
     setRegion(defaultRegion || "");
     setLiters(quota);
+    setCost(0);
     setNote("");
     setOpen(true);
   };
@@ -74,6 +76,7 @@ const FuelFillsCard = () => {
     setDate(f.date);
     setRegion(f.region ?? "");
     setLiters(f.liters);
+    setCost(f.cost ?? 0);
     setNote(f.note);
     setOpen(true);
   };
@@ -87,6 +90,7 @@ const FuelFillsCard = () => {
         id: editing?.id ?? `fill-${Date.now()}`,
         date,
         liters,
+        cost: Number.isFinite(cost) ? Math.max(0, cost) : 0,
         note: note.trim(),
         region,
       });
