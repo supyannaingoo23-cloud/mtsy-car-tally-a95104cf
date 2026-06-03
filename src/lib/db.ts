@@ -183,6 +183,7 @@ const toFuelFill = (r: any): FuelFill => ({
   id: r.id,
   date: r.date,
   liters: Number(r.liters) || 0,
+  cost: Number(r.cost) || 0,
   note: r.note ?? "",
   region: r.region ?? "",
 });
@@ -190,6 +191,7 @@ const fromFuelFill = (f: FuelFill) => ({
   id: f.id,
   date: f.date,
   liters: f.liters,
+  cost: f.cost ?? 0,
   note: f.note,
   region: f.region ?? "",
 });
