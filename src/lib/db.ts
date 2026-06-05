@@ -34,11 +34,16 @@ export type PartKey =
   | "brakeFluid"
   | "coolant"
   | "sparkPlug"
-  | "filters";
+  | "filters"
+  | "wiper"
+  | "brake"
+  | "battery"
+  | "tyrePressure";
 
 export type MaintenancePart = {
   key: PartKey;
   label: string;
+  /** 0 means: no km-based check (time-only part). */
   kmInterval: number;
   monthsInterval?: number;
   lastServiceMileage: number;
@@ -78,6 +83,11 @@ export const PART_DEFS: { key: PartKey; label: string; kmInterval: number; month
   { key: "coolant", label: "Coolant", kmInterval: 45000, monthsInterval: 24 },
   { key: "sparkPlug", label: "Spark Plug", kmInterval: 30000 },
   { key: "filters", label: "Filters", kmInterval: 30000 },
+  // New time/km-based parts (Phase 5 — Maintenance Tracking)
+  { key: "brake", label: "Brake", kmInterval: 30000, monthsInterval: 6 },
+  { key: "wiper", label: "Wiper", kmInterval: 0, monthsInterval: 12 },
+  { key: "battery", label: "Battery", kmInterval: 0, monthsInterval: 24 },
+  { key: "tyrePressure", label: "Tyre Pressure", kmInterval: 0, monthsInterval: 1 },
 ];
 
 const K_DAILY = "mtsy:daily";

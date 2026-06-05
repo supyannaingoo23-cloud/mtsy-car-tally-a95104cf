@@ -75,7 +75,12 @@ const Maintenance = () => {
               : s.level === "due-soon"
                 ? "border-primary/60"
                 : "border-border";
-          const pct = Math.min(100, (s.kmSinceService / p.kmInterval) * 100);
+          // Progress bar: km-based when kmInterval set, else month-based.
+          const pct = p.kmInterval > 0
+            ? Math.min(100, (s.kmSinceService / p.kmInterval) * 100)
+            : p.monthsInterval
+              ? Math.min(100, (s.monthsSinceService / p.monthsInterval) * 100)
+              : 0;
           return (
             <article
               key={p.key}
@@ -89,8 +94,9 @@ const Maintenance = () => {
                 <div>
                   <h3 className="font-display font-bold tracking-wide text-base">{p.label}</h3>
                   <p className="text-xs text-muted-foreground">
-                    {fmtNumber(p.kmInterval)} km
-                    {p.monthsInterval ? ` · ${p.monthsInterval} mo` : ""}
+                    {p.kmInterval > 0 ? `${fmtNumber(p.kmInterval)} km` : ""}
+                    {p.kmInterval > 0 && p.monthsInterval ? " · " : ""}
+                    {p.monthsInterval ? `${p.monthsInterval} mo` : ""}
                   </p>
                 </div>
                 <span
@@ -120,7 +126,10 @@ const Maintenance = () => {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground tabular">
-                  {fmtNumber(s.kmSinceService)} / {fmtNumber(p.kmInterval)} km · {s.reason}
+                  {p.kmInterval > 0
+                    ? `${fmtNumber(s.kmSinceService)} / ${fmtNumber(p.kmInterval)} km · `
+                    : ""}
+                  {s.reason}
                 </p>
               </div>
 
