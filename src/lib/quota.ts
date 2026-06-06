@@ -33,9 +33,19 @@ export function formatEligibleDate(d: Date): string {
   return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()} (${DAY_NAMES[d.getDay()]})`;
 }
 
-/** Compute the next eligible refuel date: lastFill + 7 days exactly. */
+/**
+ * Compute the next eligible refuel date:
+ *   1. lastFill + 7 days
+ *   2. if the result is an odd calendar day, bump forward to the next even day
+ */
 export function computeNextEligibleDate(lastFill: Date): Date {
-  return addDays(lastFill, QUOTA_DAYS);
+  const base = addDays(lastFill, QUOTA_DAYS);
+  return isEvenDay(base) ? base : addDays(base, 1);
+}
+
+/** Bump a date forward to the next even calendar day (returns same date if already even). */
+function bumpToEvenDay(d: Date): Date {
+  return isEvenDay(d) ? d : addDays(d, 1);
 }
 
 export type QuotaStatus = {
