@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Fuel } from "lucide-react";
 import { useMonthFilter } from "@/contexts/MonthFilterContext";
 import { FuelFill, getFuelFills } from "@/lib/db";
-import { fmtNumber } from "@/lib/format";
+import { fmtLiters } from "@/lib/format";
 import { fmtMoney } from "@/lib/finance";
 
 /**
@@ -56,7 +56,7 @@ const MonthlyFuelCard = () => {
         <div>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Liters</p>
           <p className="font-display text-xl font-bold tabular text-primary">
-            {fmtNumber(liters)}<span className="text-xs text-muted-foreground"> L</span>
+            {fmtLiters(liters)}<span className="text-xs text-muted-foreground"> L</span>
           </p>
         </div>
         <div>

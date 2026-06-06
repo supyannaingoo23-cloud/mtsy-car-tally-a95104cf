@@ -33,9 +33,19 @@ export function formatEligibleDate(d: Date): string {
   return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()} (${DAY_NAMES[d.getDay()]})`;
 }
 
-/** Compute the next eligible refuel date: lastFill + 7 days exactly. */
+/**
+ * Compute the next eligible refuel date:
+ *   1. lastFill + 7 days
+ *   2. if the result is an odd calendar day, bump forward to the next even day
+ */
 export function computeNextEligibleDate(lastFill: Date): Date {
-  return addDays(lastFill, QUOTA_DAYS);
+  const base = addDays(lastFill, QUOTA_DAYS);
+  return isEvenDay(base) ? base : addDays(base, 1);
+}
+
+/** Bump a date forward to the next even calendar day (returns same date if already even). */
+function bumpToEvenDay(d: Date): Date {
+  return isEvenDay(d) ? d : addDays(d, 1);
 }
 
 export type QuotaStatus = {
@@ -79,6 +89,10 @@ export function computeQuotaStatus(
   const evenToday = isEvenDay(today);
 
   if (!last) {
+    // No fills yet → eligible immediately on the next even calendar day.
+    const eligible = bumpToEvenDay(today);
+    const daysLeft = Math.max(0, daysBetween(today, eligible));
+    const ready = daysLeft === 0;
     return {
       region,
       lastFillDate: null,
@@ -87,65 +101,56 @@ export function computeQuotaStatus(
       remainingLiters: safeQuota,
       usedPercent: 0,
       daysSinceLastFill: 0,
-      daysUntilEligible: evenToday ? 0 : 1,
+      daysUntilEligible: daysLeft,
       isEvenToday: evenToday,
-      canRefuelToday: evenToday,
-      nextEligibleDate: evenToday ? null : formatEligibleDate(addDays(today, 1)),
-      reason: evenToday
-        ? "✅ QUOTA READY"
-        : "🚫 Waiting for Even Day",
-      badge: evenToday ? "available" : "waiting-even",
+      canRefuelToday: ready,
+      nextEligibleDate: ready ? null : formatEligibleDate(eligible),
+      reason: ready ? "✅ QUOTA READY" : "🚫 Waiting for Even Day",
+      badge: ready ? "available" : "waiting-even",
     };
   }
 
   const lastDate = new Date(last.date + "T00:00:00");
-  const days = daysBetween(lastDate, today);
-  const sevenDaysOk = days >= QUOTA_DAYS;
-  const eligibleDate = computeNextEligibleDate(lastDate);
+  const daysSince = Math.max(0, daysBetween(lastDate, today));
   const lastLiters = Math.max(0, Number(last.liters) || 0);
-  const remaining = Math.max(0, safeQuota - lastLiters);
   const usedPercent = Math.min(
     100,
     Math.max(0, Math.round((lastLiters / safeQuota) * 100)),
   );
 
-  if (!sevenDaysOk) {
-    const remainingDays = QUOTA_DAYS - days;
-    return {
-      region,
-      lastFillDate: last.date,
-      lastFillLiters: lastLiters,
-      quotaTotal: safeQuota,
-      remainingLiters: remaining,
-      usedPercent,
-      daysSinceLastFill: days,
-      daysUntilEligible: remainingDays,
-      isEvenToday: evenToday,
-      canRefuelToday: false,
-      nextEligibleDate: formatEligibleDate(eligibleDate),
-      reason: `⏳ ${remainingDays} day${remainingDays === 1 ? "" : "s"} left`,
-      badge: "countdown",
-    };
-  }
+  // Earliest eligible date is lastFill + 7 days, bumped to next even day if odd.
+  // If that already passed, eligibility rolls forward to the next even day from today.
+  const baseEligible = computeNextEligibleDate(lastDate);
+  const eligibleDate =
+    baseEligible.getTime() <= today.getTime()
+      ? bumpToEvenDay(today)
+      : baseEligible;
 
-  if (evenToday) {
+  // Days left is always computed dynamically from today → eligibleDate.
+  const daysLeft = Math.max(0, daysBetween(today, eligibleDate));
+  const ready = daysLeft === 0;
+
+  if (ready) {
     return {
       region,
       lastFillDate: last.date,
       lastFillLiters: lastLiters,
       quotaTotal: safeQuota,
-      remainingLiters: safeQuota, // 7-day wait elapsed on an even day → ready for a full refill
+      remainingLiters: safeQuota, // eligible day → full quota available again
       usedPercent: 0,
-      daysSinceLastFill: days,
+      daysSinceLastFill: daysSince,
       daysUntilEligible: 0,
-      isEvenToday: true,
+      isEvenToday: evenToday,
       canRefuelToday: true,
-      nextEligibleDate: formatEligibleDate(today),
+      nextEligibleDate: formatEligibleDate(eligibleDate),
       reason: "✅ QUOTA READY",
       badge: "available",
     };
   }
 
+  // Pre-eligible: show remaining of the existing quota and dynamic countdown.
+  const remaining = Math.max(0, safeQuota - lastLiters);
+  const waitingForEven = daysSince >= QUOTA_DAYS && !isEvenDay(today);
   return {
     region,
     lastFillDate: last.date,
@@ -153,13 +158,15 @@ export function computeQuotaStatus(
     quotaTotal: safeQuota,
     remainingLiters: remaining,
     usedPercent,
-    daysSinceLastFill: days,
-    daysUntilEligible: 1,
-    isEvenToday: false,
+    daysSinceLastFill: daysSince,
+    daysUntilEligible: daysLeft,
+    isEvenToday: evenToday,
     canRefuelToday: false,
-    nextEligibleDate: formatEligibleDate(addDays(today, 1)),
-    reason: "🚫 Waiting for Even Day",
-    badge: "waiting-even",
+    nextEligibleDate: formatEligibleDate(eligibleDate),
+    reason: waitingForEven
+      ? "🚫 Waiting for Even Day"
+      : `⏳ ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`,
+    badge: waitingForEven ? "waiting-even" : "countdown",
   };
 }
 
