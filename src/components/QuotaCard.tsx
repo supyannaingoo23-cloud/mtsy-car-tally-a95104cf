@@ -96,7 +96,7 @@ const QuotaCard = () => {
                   </p>
                   {s.lastFillDate && (
                     <p className="text-[10px] text-muted-foreground">
-                      Last fill {s.lastFillDate} · {fmtNumber(s.lastFillLiters)}L
+                      Last fill {s.lastFillDate} · {fmtLiters(s.lastFillLiters)}L
                     </p>
                   )}
                 </div>
@@ -116,11 +116,11 @@ const QuotaCard = () => {
                 <div className="flex items-center justify-between text-[11px] tabular">
                   <span className="text-muted-foreground">
                     <span className="font-semibold text-foreground">
-                      {fmtNumber(s.remainingLiters)}L
+                      {fmtLiters(s.remainingLiters)}L
                     </span>{" "}
                     Remaining /{" "}
                     <span className="font-semibold text-foreground">
-                      {fmtNumber(s.quotaTotal)}L
+                      {fmtLiters(s.quotaTotal)}L
                     </span>{" "}
                     Total
                   </span>

@@ -35,7 +35,7 @@ import {
   saveFuelFill,
 } from "@/lib/db";
 import { MYANMAR_REGIONS } from "@/lib/regions";
-import { fmtNumber } from "@/lib/format";
+import { fmtLiters, fmtNumber } from "@/lib/format";
 import { fmtMoney } from "@/lib/finance";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -199,7 +199,7 @@ const FuelFillsCard = () => {
                 </p>
               </div>
               <span className="font-display font-bold tabular text-sm text-primary">
-                {fmtNumber(f.liters)} L
+                {fmtLiters(f.liters)} L
               </span>
               <button
                 type="button"
