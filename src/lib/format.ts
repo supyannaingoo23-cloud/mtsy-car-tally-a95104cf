@@ -9,6 +9,20 @@ export function fmtNumber(n: number | null | undefined, opts?: { decimals?: numb
   });
 }
 
+/**
+ * Format a liters value, preserving up to 2 decimals when fractional,
+ * otherwise showing as an integer. Examples: 35 -> "35", 19.05 -> "19.05".
+ */
+export function fmtLiters(n: number | null | undefined): string {
+  if (n === null || n === undefined || Number.isNaN(n)) return "";
+  const num = Number(n);
+  const hasFraction = Math.abs(num - Math.trunc(num)) > 1e-9;
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: hasFraction ? 2 : 0,
+  });
+}
+
 /** Strip non-numeric chars (keep digits, minus, decimal point) and parse. */
 export function parseNumber(input: string): number {
   if (!input) return 0;
