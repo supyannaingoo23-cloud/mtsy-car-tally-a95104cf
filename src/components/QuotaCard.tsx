@@ -4,7 +4,7 @@ import { Fuel, MapPin, CalendarClock } from "lucide-react";
 import { FuelFill, getFuelFills, getQuotaLiters, getRegion } from "@/lib/db";
 import { computeAllRegionStatuses, QuotaStatus } from "@/lib/quota";
 import { Progress } from "@/components/ui/progress";
-import { fmtNumber } from "@/lib/format";
+import { fmtLiters } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { detectRegion } from "@/lib/geoRegion";
 
