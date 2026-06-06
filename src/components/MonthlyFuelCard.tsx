@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Fuel } from "lucide-react";
 import { useMonthFilter } from "@/contexts/MonthFilterContext";
 import { FuelFill, getFuelFills } from "@/lib/db";
-import { fmtLiters, fmtNumber } from "@/lib/format";
+import { fmtLiters } from "@/lib/format";
 import { fmtMoney } from "@/lib/finance";
 
 /**
