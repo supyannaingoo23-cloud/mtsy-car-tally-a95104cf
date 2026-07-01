@@ -280,8 +280,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      current_owner_id: { Args: never; Returns: string }
-      is_owner_or_unclaimed: { Args: never; Returns: boolean }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
